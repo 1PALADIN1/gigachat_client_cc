@@ -1,5 +1,5 @@
-import { UserSession } from "./UserSession";
 import { EventTarget } from 'cc';
+import { ApiConstants } from '../ApiConstants';
 
 export enum AuthEventType {
     ERROR = "error",
@@ -9,6 +9,8 @@ export enum AuthEventType {
 
 export interface IAuth {
     authResultEvent: EventTarget
+
+    set baseUrl(value: string)
 
     signInUser(username: string, password: string)
     signUpUser(username: string, password: string)
@@ -20,13 +22,16 @@ export class Auth implements IAuth {
 
     authResultEvent: EventTarget;
 
-    constructor(baseUrl: string) {
-        this._baseUrl = baseUrl;
+    set baseUrl(value: string) {
+        this._baseUrl = value;
+    }
+
+    constructor() {
         this.authResultEvent = new EventTarget();
     }
 
     signInUser(username: string, password: string) {
-        let url = "http://" + this._baseUrl + "/api/auth/sign-in";
+        let url = ApiConstants.buildRestAddr(this._baseUrl, ApiConstants.SIGN_IN_ROUTE);
         let req = this._createNewRequest(url, "POST", (error, message) => {
             if (error) {
                 this.authResultEvent.emit(AuthEventType.ERROR, message);
@@ -34,8 +39,7 @@ export class Auth implements IAuth {
             }
 
             let result = JSON.parse(message);
-            let session = new UserSession(result["access_token"]);
-            this.authResultEvent.emit(AuthEventType.SIGN_IN_SUCCESS, session);
+            this.authResultEvent.emit(AuthEventType.SIGN_IN_SUCCESS, result["access_token"]);
         })
 
         let data = {
@@ -48,7 +52,7 @@ export class Auth implements IAuth {
     }
     
     signUpUser(username: string, password: string) {
-        let url = "http://" + this._baseUrl + "/api/auth/sign-up";
+        let url = ApiConstants.buildRestAddr(this._baseUrl, ApiConstants.SIGN_UP_ROUTE);
         let req = this._createNewRequest(url, "POST", (error, message) => {
             if (error) {
                 this.authResultEvent.emit(AuthEventType.ERROR, message);

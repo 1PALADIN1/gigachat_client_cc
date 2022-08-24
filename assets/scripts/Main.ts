@@ -1,6 +1,8 @@
 import { _decorator, Component, Node } from 'cc';
-import { IAuth, Auth, AuthEventType } from './network/auth/Auth';
-import { UserSession } from './network/auth/UserSession';
+import { IAuth, Auth } from './network/auth/Auth';
+import { AuthController } from './ui/controllers/AuthController';
+import { AuthPanel } from './ui/panels/AuthPanel';
+import { InfoPanel } from './ui/panels/InfoPanel';
 const { ccclass, property } = _decorator;
 
 @ccclass('Main')
@@ -9,37 +11,27 @@ export class Main extends Component {
     @property
     serverUrl: string = "";
 
+    @property({type:AuthPanel})
+    authPanel: AuthPanel = null;
+    @property({type:InfoPanel})
+    infoPanel: InfoPanel = null;
+
     private _auth: IAuth;
+    private _authController: AuthController;
 
     start() {
-        this._auth = new Auth(this.serverUrl);
-        this._auth.authResultEvent.on(AuthEventType.SIGN_IN_SUCCESS, this._signInSuccess, this);
-        this._auth.authResultEvent.on(AuthEventType.SIGN_UP_SUCCESS, this._signUpSuccess, this);
-        this._auth.authResultEvent.on(AuthEventType.ERROR, this._authError, this);
-
-        this._auth.signInUser("username", "password"); //TODO
+        this._buildUpDependencies();
+        
+        this._authController.authUser();
     }
 
     onDestroy() {
-        if (this._auth == null) {
-            return;
-        }
-
-        this._auth.authResultEvent.off(AuthEventType.SIGN_IN_SUCCESS, this._signInSuccess, this);
-        this._auth.authResultEvent.off(AuthEventType.SIGN_UP_SUCCESS, this._signUpSuccess, this);
-        this._auth.authResultEvent.off(AuthEventType.ERROR, this._authError, this);
+        this._authController.dispose();
     }
 
-    private _signInSuccess(session: UserSession) {
-        console.log("Sign in success! Token: " + session.token);
-    }
-
-    private _signUpSuccess(message: string) {
-        console.log("Sign up success! " + message);
-    }
-
-    private _authError(message: string) {
-        console.error("Error: " + message);
+    private _buildUpDependencies() {
+        this._auth = new Auth();
+        this._authController = new AuthController(this._auth, this.authPanel, this.infoPanel, this.serverUrl);
     }
 }
 
