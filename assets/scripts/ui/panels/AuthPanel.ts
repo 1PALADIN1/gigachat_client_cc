@@ -19,5 +19,10 @@ export class AuthPanel extends Component {
     setServerUrl(url: string) {
         this.serverUrlText.string = url;
     }
+
+    clearEditBoxes() {
+        this.usernameText.string = "";
+        this.passwordText.string = "";
+    }
 }
 
