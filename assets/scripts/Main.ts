@@ -9,6 +9,7 @@ import { IConnectionManager, ConnectionManager, WsResultEvent } from './network/
 import { UserSession } from './network/auth/UserSession';
 import { SearchButtonPanel } from './ui/panels/user/SearchButtonPanel';
 import { SearchUserPanel } from './ui/panels/user/SearchUserPanel';
+import { HttpRequestMaker } from './network/HttpRequestMaker';
 const { ccclass, property } = _decorator;
 
 const panelsGroup: string = "Panels";
@@ -64,6 +65,7 @@ export class Main extends Component {
     //models
     private _auth: IAuth;
     private _connectionManager: IConnectionManager;
+    private _httpRequestMaker: HttpRequestMaker;
     //controllers
     private _authController: AuthController;
     private _userController: UserController;
@@ -81,11 +83,12 @@ export class Main extends Component {
     }
 
     private _buildUp() {
-        this._auth = new Auth();
         this._connectionManager = new ConnectionManager();
+        this._httpRequestMaker = new HttpRequestMaker();
+        this._auth = new Auth(this._httpRequestMaker);
 
         this._authController = new AuthController(this._auth, this.authPanel, this.registerPanel, this.infoPanel, this.serverUrl);
-        this._userController = new UserController(this.searchButtonPanel, this.searchUserPanel);
+        this._userController = new UserController(this._httpRequestMaker, this.searchButtonPanel, this.searchUserPanel);
     }
 
     private _startAuth() {
@@ -110,6 +113,7 @@ export class Main extends Component {
 
             //activate controllers
             this._userController.activate();
+            this._userController.bindSession(userSession);
         });
     }
 

@@ -137,14 +137,14 @@ export class AuthController implements IUiController {
 
     private _signInSuccess(mesasge: string) {
         let session = new UserSession(mesasge, this._auth.baseUrl);
-        console.log("Sign in success! Token: " + session.token);
+        console.log("Sign in success!");
         this._setActivePanel(PanelType.NONE);
         this._authPanel.clearEditBoxes();
         this.authResultEvent.emit(AuthResultEvent.SUCCESS, session);
     }
 
     private _signUpSuccess(message: string) {
-        console.log("Sign up success! " + message);
+        console.log("Sign up success!");
         this._setActivePanel(PanelType.AUTH);
         this._registerPanel.clearEditBoxes();
     }

@@ -6,6 +6,8 @@ export class ApiConstants {
     //auth
     static readonly SIGN_IN_ROUTE = "/api/auth/sign-in";
     static readonly SIGN_UP_ROUTE = "/api/auth/sign-up";
+    //user
+    static readonly FIND_USER_ROOT = "/api/user";
     //ws
     static readonly WS_ROUTE = "/ws";
 

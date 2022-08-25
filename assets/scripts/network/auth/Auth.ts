@@ -1,5 +1,6 @@
 import { EventTarget } from 'cc';
 import { ApiConstants } from '../ApiConstants';
+import { HttpRequestMaker } from '../HttpRequestMaker';
 
 export enum AuthEventType {
     ERROR = "error",
@@ -18,7 +19,7 @@ export interface IAuth {
 }
 
 export class Auth implements IAuth {
-    private _requestTimeout = 5_000;
+    private _httpRequestMaker: HttpRequestMaker;
     private _baseUrl: string;
 
     authResultEvent: EventTarget;
@@ -31,13 +32,14 @@ export class Auth implements IAuth {
         return this._baseUrl;
     }
 
-    constructor() {
+    constructor(httpRequestMaker: HttpRequestMaker) {
         this.authResultEvent = new EventTarget();
+        this._httpRequestMaker = httpRequestMaker;
     }
 
     signInUser(username: string, password: string) {
         let url = ApiConstants.buildRestAddr(this._baseUrl, ApiConstants.SIGN_IN_ROUTE);
-        let req = this._createNewRequest(url, "POST", (error, message) => {
+        let req = this._httpRequestMaker.createNewRequest(url, "POST", (error, message) => {
             if (error) {
                 this.authResultEvent.emit(AuthEventType.ERROR, message);
                 return;
@@ -58,7 +60,7 @@ export class Auth implements IAuth {
     
     signUpUser(username: string, password: string) {
         let url = ApiConstants.buildRestAddr(this._baseUrl, ApiConstants.SIGN_UP_ROUTE);
-        let req = this._createNewRequest(url, "POST", (error, message) => {
+        let req = this._httpRequestMaker.createNewRequest(url, "POST", (error, message) => {
             if (error) {
                 this.authResultEvent.emit(AuthEventType.ERROR, message);
                 return;
@@ -74,31 +76,5 @@ export class Auth implements IAuth {
 
         console.log("Trying to sign up with url: " + url + "...");
         req.send(JSON.stringify(data));
-    }
-
-    private _createNewRequest(url: string, method: string, callback: (error: boolean, mesasge: string) => void) {
-        let req = new XMLHttpRequest();
-        req.open("POST", url, true);
-
-        req.onreadystatechange = () => {
-            if (req.readyState != 4) {
-                return;
-            }
-
-            if (req.status != 200) {
-                callback(true, req.responseText);
-                return;
-            }
-
-            callback(false, req.responseText);
-        };
-
-        req.ontimeout = () => {
-            callback(true, "timeout");
-        };
-
-        req.timeout = this._requestTimeout;
-        req.setRequestHeader("Content-Type", "application/json");
-        return req;
     }
 }
