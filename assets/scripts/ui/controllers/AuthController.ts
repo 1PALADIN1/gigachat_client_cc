@@ -5,6 +5,7 @@ import { InfoPanel } from "../panels/InfoPanel";
 import { RegisterPanel } from "../panels/auth/RegisterPanel";
 import { IUiController } from "./IUiController";
 import { EventTarget } from 'cc';
+import { UiConstants } from "../UiConstants";
 
 enum PanelType {
     NONE,
@@ -18,7 +19,6 @@ export enum AuthResultEvent {
 }
 
 const connectingMessage: string = "Connecting...";
-const buttonClickEvent: string = "click";
 
 export class AuthController implements IUiController {
     private _auth: IAuth;
@@ -41,28 +41,28 @@ export class AuthController implements IUiController {
         this._defaultServerUrl = defaultServerUrl;
         this.authResultEvent = new EventTarget();
 
-        //auth model
-        this._auth.authResultEvent.on(AuthEventType.SIGN_IN_SUCCESS, this._signInSuccess, this);
-        this._auth.authResultEvent.on(AuthEventType.SIGN_UP_SUCCESS, this._signUpSuccess, this);
-        this._auth.authResultEvent.on(AuthEventType.ERROR, this._authError, this);
-        //auth panel buttons
-        this._authPanel.loginButton.node.on(buttonClickEvent, this._onSignInClicked, this);
-        this._authPanel.registerButton.node.on(buttonClickEvent, this._onMoveToRegisterClicked, this);
-        //register panel buttons
-        this._registerPanel.closeButton.node.on(buttonClickEvent, this._onSignUpClosed, this);
-        this._registerPanel.registerButton.node.on(buttonClickEvent, this._onSignUpClicked, this);
-
         this._auth.baseUrl = this._defaultServerUrl;
         this._authPanel.setServerUrl(this._defaultServerUrl);
-
-        this._authPanel.usernameText.string = "username" //TODO: for debug
-        this._authPanel.passwordText.string = "password"; //TODO: for debug
 
         this._setActivePanel(PanelType.NONE);
     }
 
     activate() {
         this._setActivePanel(PanelType.AUTH);
+
+        //auth model
+        this._auth.authResultEvent.on(AuthEventType.SIGN_IN_SUCCESS, this._signInSuccess, this);
+        this._auth.authResultEvent.on(AuthEventType.SIGN_UP_SUCCESS, this._signUpSuccess, this);
+        this._auth.authResultEvent.on(AuthEventType.ERROR, this._authError, this);
+        //auth panel buttons
+        this._authPanel.loginButton.node.on(UiConstants.buttonClickEvent, this._onSignInClicked, this);
+        this._authPanel.registerButton.node.on(UiConstants.buttonClickEvent, this._onMoveToRegisterClicked, this);
+        //register panel buttons
+        this._registerPanel.closeButton.node.on(UiConstants.buttonClickEvent, this._onSignUpClosed, this);
+        this._registerPanel.registerButton.node.on(UiConstants.buttonClickEvent, this._onSignUpClicked, this);
+
+        this._authPanel.usernameText.string = "username" //TODO: for debug
+        this._authPanel.passwordText.string = "password"; //TODO: for debug
     }
 
     deactivate() {
@@ -71,11 +71,13 @@ export class AuthController implements IUiController {
          this._auth.authResultEvent.off(AuthEventType.SIGN_UP_SUCCESS, this._signUpSuccess, this);
          this._auth.authResultEvent.off(AuthEventType.ERROR, this._authError, this);
          //auth panel buttons
-         this._authPanel.loginButton.node.off(buttonClickEvent, this._onSignInClicked, this);
-         this._authPanel.registerButton.node.off(buttonClickEvent, this._onMoveToRegisterClicked, this);
+         this._authPanel.loginButton.node.off(UiConstants.buttonClickEvent, this._onSignInClicked, this);
+         this._authPanel.registerButton.node.off(UiConstants.buttonClickEvent, this._onMoveToRegisterClicked, this);
          //register panel buttons
-         this._registerPanel.closeButton.node.off(buttonClickEvent, this._onSignUpClosed, this);
-         this._registerPanel.registerButton.node.off(buttonClickEvent, this._onSignUpClicked, this);
+         this._registerPanel.closeButton.node.off(UiConstants.buttonClickEvent, this._onSignUpClosed, this);
+         this._registerPanel.registerButton.node.off(UiConstants.buttonClickEvent, this._onSignUpClicked, this);
+
+         this._setActivePanel(PanelType.NONE);
     }
 
     private _onSignInClicked() {

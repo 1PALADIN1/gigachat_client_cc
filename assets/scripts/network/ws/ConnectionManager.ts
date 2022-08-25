@@ -4,6 +4,8 @@ import { UserSession } from "../auth/UserSession";
 import { EventTarget } from 'cc';
 
 export interface IConnectionManager extends IDisposable {
+    wsResultEvent: EventTarget;
+
     isActive();
     connect(userSession: UserSession, callback: (result: boolean, message: string) => void);
 }

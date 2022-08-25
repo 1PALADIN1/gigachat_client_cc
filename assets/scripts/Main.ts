@@ -5,9 +5,13 @@ import { AuthPanel } from './ui/panels/auth/AuthPanel';
 import { InfoPanel } from './ui/panels/InfoPanel';
 import { RegisterPanel } from './ui/panels/auth/RegisterPanel';
 import { UserController } from './ui/controllers/UserController';
-import { IConnectionManager, ConnectionManager } from './network/ws/ConnectionManager';
+import { IConnectionManager, ConnectionManager, WsResultEvent } from './network/ws/ConnectionManager';
 import { UserSession } from './network/auth/UserSession';
+import { SearchButtonPanel } from './ui/panels/user/SearchButtonPanel';
+import { SearchUserPanel } from './ui/panels/user/SearchUserPanel';
 const { ccclass, property } = _decorator;
+
+const panelsGroup: string = "Panels";
 
 @ccclass('Main')
 export class Main extends Component {
@@ -15,12 +19,47 @@ export class Main extends Component {
     @property
     serverUrl: string = "";
 
-    @property({ group: {name: "Panels"}, type: AuthPanel })
+    //panels
+    //auth
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: AuthPanel
+    })
     authPanel: AuthPanel = null;
-    @property({ group: {name: "Panels"}, type: InfoPanel })
-    infoPanel: InfoPanel = null;
-    @property({ group: {name: "Panels"}, type: RegisterPanel })
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: RegisterPanel
+    })
     registerPanel: RegisterPanel = null;
+
+    //user
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: SearchButtonPanel
+    })
+    searchButtonPanel: SearchButtonPanel = null;
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: SearchUserPanel
+    })
+    searchUserPanel: SearchUserPanel = null;
+
+    //other
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: InfoPanel
+    })
+    infoPanel: InfoPanel = null;
 
     //models
     private _auth: IAuth;
@@ -38,6 +77,7 @@ export class Main extends Component {
         this._connectionManager.dispose();
 
         this._authController.deactivate();
+        this._userController.deactivate();
     }
 
     private _buildUp() {
@@ -45,7 +85,7 @@ export class Main extends Component {
         this._connectionManager = new ConnectionManager();
 
         this._authController = new AuthController(this._auth, this.authPanel, this.registerPanel, this.infoPanel, this.serverUrl);
-        this._userController = new UserController();
+        this._userController = new UserController(this.searchButtonPanel, this.searchUserPanel);
     }
 
     private _startAuth() {
@@ -64,7 +104,25 @@ export class Main extends Component {
                 return;
             }
 
+            //listen connection events
+            this._connectionManager.wsResultEvent.on(WsResultEvent.ERROR, this._disconnected, this);
+            this._connectionManager.wsResultEvent.on(WsResultEvent.CLOSED, this._disconnected, this);
+
+            //activate controllers
+            this._userController.activate();
         });
+    }
+
+    private _disconnected(message: string) {
+        console.log("Connection closed: " + message);
+
+        this._connectionManager.wsResultEvent.off(WsResultEvent.ERROR, this._disconnected, this);
+        this._connectionManager.wsResultEvent.off(WsResultEvent.CLOSED, this._disconnected, this);
+
+        //deactivate controllers
+        this._userController.deactivate();
+        
+        this._startAuth();
     }
 }
 
