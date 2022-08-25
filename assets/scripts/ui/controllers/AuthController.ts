@@ -1,9 +1,10 @@
-import { IDisposable } from "../../IDisposable";
 import { AuthEventType, IAuth } from "../../network/auth/Auth";
 import { UserSession } from "../../network/auth/UserSession";
-import { AuthPanel } from "../panels/AuthPanel";
+import { AuthPanel } from "../panels/auth/AuthPanel";
 import { InfoPanel } from "../panels/InfoPanel";
-import { RegisterPanel } from "../panels/RegisterPanel";
+import { RegisterPanel } from "../panels/auth/RegisterPanel";
+import { IUiController } from "./IUiController";
+import { EventTarget } from 'cc';
 
 enum PanelType {
     NONE,
@@ -12,10 +13,14 @@ enum PanelType {
     INFO
 }
 
+export enum AuthResultEvent {
+    SUCCESS = "success"
+}
+
 const connectingMessage: string = "Connecting...";
 const buttonClickEvent: string = "click";
 
-export class AuthController implements IDisposable {
+export class AuthController implements IUiController {
     private _auth: IAuth;
 
     private _authPanel: AuthPanel;
@@ -24,7 +29,9 @@ export class AuthController implements IDisposable {
 
     private _defaultServerUrl: string;
 
-    private _activePanelType?:  PanelType;
+    private _activePanelType?: PanelType;
+
+    authResultEvent: EventTarget;
 
     constructor(auth: IAuth, authPanel: AuthPanel, registerPanel: RegisterPanel, infoPanel: InfoPanel, defaultServerUrl: string) {
         this._auth = auth;
@@ -32,6 +39,7 @@ export class AuthController implements IDisposable {
         this._registerPanel = registerPanel;
         this._infoPanel = infoPanel;
         this._defaultServerUrl = defaultServerUrl;
+        this.authResultEvent = new EventTarget();
 
         //auth model
         this._auth.authResultEvent.on(AuthEventType.SIGN_IN_SUCCESS, this._signInSuccess, this);
@@ -53,21 +61,21 @@ export class AuthController implements IDisposable {
         this._setActivePanel(PanelType.NONE);
     }
 
-    dispose() {
-        //auth model
-        this._auth.authResultEvent.off(AuthEventType.SIGN_IN_SUCCESS, this._signInSuccess, this);
-        this._auth.authResultEvent.off(AuthEventType.SIGN_UP_SUCCESS, this._signUpSuccess, this);
-        this._auth.authResultEvent.off(AuthEventType.ERROR, this._authError, this);
-        //auth panel buttons
-        this._authPanel.loginButton.node.off(buttonClickEvent, this._onSignInClicked, this);
-        this._authPanel.registerButton.node.off(buttonClickEvent, this._onMoveToRegisterClicked, this);
-        //register panel buttons
-        this._registerPanel.closeButton.node.off(buttonClickEvent, this._onSignUpClosed, this);
-        this._registerPanel.registerButton.node.off(buttonClickEvent, this._onSignUpClicked, this);
+    activate() {
+        this._setActivePanel(PanelType.AUTH);
     }
 
-    authUser() {
-        this._setActivePanel(PanelType.AUTH);
+    deactivate() {
+         //auth model
+         this._auth.authResultEvent.off(AuthEventType.SIGN_IN_SUCCESS, this._signInSuccess, this);
+         this._auth.authResultEvent.off(AuthEventType.SIGN_UP_SUCCESS, this._signUpSuccess, this);
+         this._auth.authResultEvent.off(AuthEventType.ERROR, this._authError, this);
+         //auth panel buttons
+         this._authPanel.loginButton.node.off(buttonClickEvent, this._onSignInClicked, this);
+         this._authPanel.registerButton.node.off(buttonClickEvent, this._onMoveToRegisterClicked, this);
+         //register panel buttons
+         this._registerPanel.closeButton.node.off(buttonClickEvent, this._onSignUpClosed, this);
+         this._registerPanel.registerButton.node.off(buttonClickEvent, this._onSignUpClicked, this);
     }
 
     private _onSignInClicked() {
@@ -126,10 +134,11 @@ export class AuthController implements IDisposable {
     // ================== AUTH RESULTS ==================
 
     private _signInSuccess(mesasge: string) {
-        let session = new UserSession(mesasge);
+        let session = new UserSession(mesasge, this._auth.baseUrl);
         console.log("Sign in success! Token: " + session.token);
         this._setActivePanel(PanelType.NONE);
         this._authPanel.clearEditBoxes();
+        this.authResultEvent.emit(AuthResultEvent.SUCCESS, session);
     }
 
     private _signUpSuccess(message: string) {

@@ -8,12 +8,13 @@ export enum AuthEventType {
 }
 
 export interface IAuth {
-    authResultEvent: EventTarget
+    authResultEvent: EventTarget;
 
-    set baseUrl(value: string)
+    set baseUrl(value: string);
+    get baseUrl() : string;
 
-    signInUser(username: string, password: string)
-    signUpUser(username: string, password: string)
+    signInUser(username: string, password: string);
+    signUpUser(username: string, password: string);
 }
 
 export class Auth implements IAuth {
@@ -24,6 +25,10 @@ export class Auth implements IAuth {
 
     set baseUrl(value: string) {
         this._baseUrl = value;
+    }
+
+    get baseUrl() : string {
+        return this._baseUrl;
     }
 
     constructor() {

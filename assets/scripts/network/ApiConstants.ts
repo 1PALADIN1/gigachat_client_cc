@@ -6,6 +6,8 @@ export class ApiConstants {
     //auth
     static readonly SIGN_IN_ROUTE = "/api/auth/sign-in";
     static readonly SIGN_UP_ROUTE = "/api/auth/sign-up";
+    //ws
+    static readonly WS_ROUTE = "/ws";
 
     static buildRestAddr(baseUrl: string, route: string) {
         return ApiConstants.REST_PREFIX + baseUrl + route;
