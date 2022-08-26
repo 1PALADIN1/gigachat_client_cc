@@ -21,6 +21,7 @@ export interface IAuth {
 export class Auth implements IAuth {
     private _httpRequestMaker: HttpRequestMaker;
     private _baseUrl: string;
+    private _signInUsername: string;
 
     authResultEvent: EventTarget;
 
@@ -39,16 +40,17 @@ export class Auth implements IAuth {
 
     signInUser(username: string, password: string) {
         let url = ApiConstants.buildRestAddr(this._baseUrl, ApiConstants.SIGN_IN_ROUTE);
-        let req = this._httpRequestMaker.createNewRequest(url, "POST", (error, message) => {
+        let req = this._httpRequestMaker.createNewRequest(url, ApiConstants.HTTP_POST, (error, message) => {
             if (error) {
                 this.authResultEvent.emit(AuthEventType.ERROR, message);
                 return;
             }
 
             let result = JSON.parse(message);
-            this.authResultEvent.emit(AuthEventType.SIGN_IN_SUCCESS, result["access_token"]);
+            this.authResultEvent.emit(AuthEventType.SIGN_IN_SUCCESS, result["id"], this._signInUsername, result["access_token"]);
         })
 
+        this._signInUsername = username;
         let data = {
             "username": username,
             "password": password
@@ -60,7 +62,7 @@ export class Auth implements IAuth {
     
     signUpUser(username: string, password: string) {
         let url = ApiConstants.buildRestAddr(this._baseUrl, ApiConstants.SIGN_UP_ROUTE);
-        let req = this._httpRequestMaker.createNewRequest(url, "POST", (error, message) => {
+        let req = this._httpRequestMaker.createNewRequest(url, ApiConstants.HTTP_POST, (error, message) => {
             if (error) {
                 this.authResultEvent.emit(AuthEventType.ERROR, message);
                 return;

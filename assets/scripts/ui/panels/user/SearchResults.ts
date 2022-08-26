@@ -1,9 +1,13 @@
-import { _decorator, Component, Node, Prefab, instantiate } from 'cc';
+import { _decorator, Component, Node, Prefab, instantiate, EventTarget } from 'cc';
+import { IUserInfo } from '../../controllers/IUserInfo';
+import { UiConstants } from '../../UiConstants';
 import { SearchResultsItem } from './SearchResultsItem';
 const { ccclass, property } = _decorator;
 
 @ccclass('SearchResults')
 export class SearchResults extends Component {
+    startChatEvent: EventTarget = new EventTarget();
+
     @property({
         type: Prefab
     })
@@ -17,14 +21,15 @@ export class SearchResults extends Component {
         this._clearResults();
     }
 
-    //TODO: set userIds
-    setResults(users: string[]) {
+    setResults(users: IUserInfo[]) {
         this._clearResults();
         
         for (let i = 0; i < users.length; i++) {
             let node = instantiate(this.searchResultItemPrefab);
             this.resultsRoot.addChild(node);
-            node.getComponent(SearchResultsItem).setup(i, users[i]);
+            let searchItem = node.getComponent(SearchResultsItem);
+            searchItem.setup(users[i].id, users[i].username);
+            searchItem.startChatEvent.on(UiConstants.startChatEvent, this._onChatButtonClicked, this);
         }
     }
 
@@ -35,8 +40,14 @@ export class SearchResults extends Component {
         }
 
         for (let i = 0; i < childs.length; i++) {
+            let searchItem = childs[i].getComponent(SearchResultsItem);
+            searchItem.startChatEvent.off(UiConstants.startChatEvent, this._onChatButtonClicked, this);
             childs[i].destroy();
         }
+    }
+
+    private _onChatButtonClicked(userId: number, username: string) {
+        this.startChatEvent.emit(UiConstants.startChatEvent, userId, username);
     }
 }
 

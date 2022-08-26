@@ -7,9 +7,15 @@ export class ApiConstants {
     static readonly SIGN_IN_ROUTE = "/api/auth/sign-in";
     static readonly SIGN_UP_ROUTE = "/api/auth/sign-up";
     //user
-    static readonly FIND_USER_ROOT = "/api/user";
+    static readonly FIND_USER_ROUTE = "/api/user";
+    //chat
+    static readonly CHAT_ROUTE = "/api/chat";
     //ws
     static readonly WS_ROUTE = "/ws";
+
+    //methods
+    static readonly HTTP_POST = "POST";
+    static readonly HTTP_GET = "GET";
 
     static buildRestAddr(baseUrl: string, route: string) {
         return ApiConstants.REST_PREFIX + baseUrl + route;

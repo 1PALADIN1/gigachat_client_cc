@@ -1,4 +1,5 @@
 import { _decorator, Component, Node, Button, EditBox } from 'cc';
+import { IUserInfo } from '../../controllers/IUserInfo';
 import { SearchResults } from './SearchResults';
 const { ccclass, property } = _decorator;
 
@@ -25,7 +26,7 @@ export class SearchUserPanel extends Component {
         this.searchText.string = "";
     }
 
-    setResults(users: string[]) {
+    setResults(users: IUserInfo[]) {
         this.searchResults.setResults(users);
     }
 }

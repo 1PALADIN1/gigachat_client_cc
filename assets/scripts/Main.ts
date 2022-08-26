@@ -10,6 +10,8 @@ import { UserSession } from './network/auth/UserSession';
 import { SearchButtonPanel } from './ui/panels/user/SearchButtonPanel';
 import { SearchUserPanel } from './ui/panels/user/SearchUserPanel';
 import { HttpRequestMaker } from './network/HttpRequestMaker';
+import { ChatController } from './ui/controllers/ChatController';
+import { ISessionController } from './ui/controllers/ISessionController';
 const { ccclass, property } = _decorator;
 
 const panelsGroup: string = "Panels";
@@ -68,7 +70,7 @@ export class Main extends Component {
     private _httpRequestMaker: HttpRequestMaker;
     //controllers
     private _authController: AuthController;
-    private _userController: UserController;
+    private _sessionControllers: Array<ISessionController>;
 
     start() {
         this._buildUp();
@@ -79,7 +81,9 @@ export class Main extends Component {
         this._connectionManager.dispose();
 
         this._authController.deactivate();
-        this._userController.deactivate();
+        for (let i = 0; i < this._sessionControllers.length; i++) {
+            this._sessionControllers[i].deactivate();
+        }
     }
 
     private _buildUp() {
@@ -88,7 +92,11 @@ export class Main extends Component {
         this._auth = new Auth(this._httpRequestMaker);
 
         this._authController = new AuthController(this._auth, this.authPanel, this.registerPanel, this.infoPanel, this.serverUrl);
-        this._userController = new UserController(this._httpRequestMaker, this.searchButtonPanel, this.searchUserPanel);
+
+        this._sessionControllers = [
+            new UserController(this._httpRequestMaker, this.searchButtonPanel, this.searchUserPanel),
+            new ChatController()
+        ]
     }
 
     private _startAuth() {
@@ -112,8 +120,11 @@ export class Main extends Component {
             this._connectionManager.wsResultEvent.on(WsResultEvent.CLOSED, this._disconnected, this);
 
             //activate controllers
-            this._userController.activate();
-            this._userController.bindSession(userSession);
+            for (let i = 0; i < this._sessionControllers.length; i++) {
+                let controller = this._sessionControllers[i];
+                controller.bindSession(userSession);
+                controller.activate();
+            }
         });
     }
 
@@ -124,7 +135,9 @@ export class Main extends Component {
         this._connectionManager.wsResultEvent.off(WsResultEvent.CLOSED, this._disconnected, this);
 
         //deactivate controllers
-        this._userController.deactivate();
+        for (let i = 0; i < this._sessionControllers.length; i++) {
+            this._sessionControllers[i].deactivate();
+        }
         
         this._startAuth();
     }

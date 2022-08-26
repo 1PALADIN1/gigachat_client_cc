@@ -367,7 +367,7 @@
     "propertyPath": [
       "_string"
     ],
-    "value": "WRITE"
+    "value": "CHAT"
   },
   {
     "__type__": "cc.TargetInfo",

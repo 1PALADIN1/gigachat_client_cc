@@ -4,12 +4,8 @@ import { HttpRequestMaker } from "../../network/HttpRequestMaker";
 import { SearchButtonPanel } from "../panels/user/SearchButtonPanel";
 import { SearchUserPanel } from "../panels/user/SearchUserPanel";
 import { UiConstants } from "../UiConstants";
-import { IUiController } from "./IUiController";
-
-interface UserResponse {
-    id: string;
-    username: string;
-}
+import { ISessionController } from "./ISessionController";
+import { IUserInfo } from "./IUserInfo";
 
 enum PanelType {
     NONE,
@@ -19,7 +15,7 @@ enum PanelType {
 
 const minSearchSymbols: number = 3;
 
-export class UserController implements IUiController {
+export class UserController implements ISessionController {
     //panels
     private _searchButtonPanel: SearchButtonPanel;
     private _searchUserPanel: SearchUserPanel;
@@ -49,6 +45,7 @@ export class UserController implements IUiController {
         this._searchUserPanel.closeButton.node.on(UiConstants.buttonClickEvent, this._onCloseSearchPanelClicked, this);
         this._searchUserPanel.searchButton.node.on(UiConstants.buttonClickEvent, this._onSearchUserClicked, this);
         this._searchUserPanel.searchText.node.on(UiConstants.editingReturn, this._onSearchUserClicked, this);
+        this._searchUserPanel.searchResults.startChatEvent.on(UiConstants.startChatEvent, this._onStartChat, this);
     }
 
     deactivate() {
@@ -58,6 +55,7 @@ export class UserController implements IUiController {
         this._searchUserPanel.closeButton.node.off(UiConstants.buttonClickEvent, this._onCloseSearchPanelClicked, this);
         this._searchUserPanel.searchButton.node.off(UiConstants.buttonClickEvent, this._onSearchUserClicked, this);
         this._searchUserPanel.searchText.node.off(UiConstants.editingReturn, this._onSearchUserClicked, this);
+        this._searchUserPanel.searchResults.startChatEvent.off(UiConstants.startChatEvent, this._onStartChat, this);
     }
 
     // ================== SEARCH PANEL METHODS ==================
@@ -79,25 +77,42 @@ export class UserController implements IUiController {
         
         this._searchInProgress = true;
         this._searchUserPanel.searchText.string = "";
-        let url = ApiConstants.buildRestAddr(this._userSession.baseServerUrl, ApiConstants.FIND_USER_ROOT) + "/" + searchString;
-        let req = this._httpRequestMaker.createNewRequestWithAuth(url, "GET", this._userSession, (error, message) => {
+        let url = ApiConstants.buildRestAddr(this._userSession.baseServerUrl, ApiConstants.FIND_USER_ROUTE) + "/" + searchString;
+        let req = this._httpRequestMaker.createNewRequestWithAuth(url, ApiConstants.HTTP_GET, this._userSession, (error, message) => {
             this._searchInProgress = false;
             if (error) {
                 console.log("Error: " + message);
                 return;
             }
 
-            let resp: UserResponse[] = JSON.parse(message.toString());
-            let usernames: string[] = [];
-            for (let i = 0; i < resp.length; i++) {
-                usernames.push(resp[i].username);
-                console.log(resp[i].username);
-            }
-
-            this._searchUserPanel.setResults(usernames);
+            let resp: IUserInfo[] = JSON.parse(message.toString());
+            this._searchUserPanel.setResults(resp);
         });
         req.send();
     }
+
+    private _onStartChat(userId: number, username: string) {
+        let url = ApiConstants.buildRestAddr(this._userSession.baseServerUrl, ApiConstants.CHAT_ROUTE);
+        let req = this._httpRequestMaker.createNewRequestWithAuth(url, ApiConstants.HTTP_POST, this._userSession, (error, message) => {
+            if (error) {
+                console.error(message);
+                return;
+            }
+
+            this._setActivePanel(PanelType.SEARCH_BUTTON);
+        });
+
+        let data = {
+            title: this._userSession.username + " " + username,
+            user_ids: [
+                this._userSession.userId,
+                userId
+            ]
+        }
+
+        req.send(JSON.stringify(data));
+    }
+
     // ================== SEARCH BUTTON METHODS ==================
 
     private _onMoveToSearchPanelClicked() {
