@@ -135,7 +135,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 435.66,
+      "width": 442.65,
       "height": 50.4
     },
     "_anchorPoint": {
@@ -170,7 +170,7 @@
       "b": 216,
       "a": 255
     },
-    "_string": "======= CHATS =======",
+    "_string": "======{ CHATS }=======",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
     "_actualFontSize": 36,

@@ -13,6 +13,8 @@ import { HttpRequestMaker } from './network/HttpRequestMaker';
 import { ChatController } from './ui/controllers/ChatController';
 import { ISessionController } from './ui/controllers/ISessionController';
 import { ChatPanel } from './ui/panels/chat/ChatPanel';
+import { ChatMessageController } from './ui/controllers/ChatMessageController';
+import { ChatMessagePanel } from './ui/panels/chat/ChatMessagePanel';
 const { ccclass, property } = _decorator;
 
 const panelsGroup: string = "Panels";
@@ -64,6 +66,20 @@ export class Main extends Component {
         type: ChatPanel
     })
     chatPanel: ChatPanel = null;
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: ChatMessagePanel
+    })
+    chatMessagePanel: ChatMessagePanel = null;
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: Node
+    })
+    noChatSelectedPanel: Node = null;
 
     //other
     @property({
@@ -105,7 +121,8 @@ export class Main extends Component {
 
         this._sessionControllers = [
             new UserController(this._httpRequestMaker, this.searchButtonPanel, this.searchUserPanel),
-            new ChatController(this._httpRequestMaker, this.chatPanel)
+            new ChatController(this._httpRequestMaker, this.chatPanel),
+            new ChatMessageController(this.chatMessagePanel, this.noChatSelectedPanel)
         ]
     }
 
