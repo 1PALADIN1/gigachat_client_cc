@@ -5,7 +5,7 @@ import { SearchButtonPanel } from "../panels/user/SearchButtonPanel";
 import { SearchUserPanel } from "../panels/user/SearchUserPanel";
 import { UiConstants } from "../UiConstants";
 import { ISessionController } from "./ISessionController";
-import { IUserInfo } from "./IUserInfo";
+import { IUserInfo } from "../../entity/IUserInfo";
 
 enum PanelType {
     NONE,

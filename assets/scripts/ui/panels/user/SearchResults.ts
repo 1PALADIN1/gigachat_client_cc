@@ -1,5 +1,5 @@
 import { _decorator, Component, Node, Prefab, instantiate, EventTarget } from 'cc';
-import { IUserInfo } from '../../controllers/IUserInfo';
+import { IUserInfo } from '../../../entity/IUserInfo';
 import { UiConstants } from '../../UiConstants';
 import { SearchResultsItem } from './SearchResultsItem';
 const { ccclass, property } = _decorator;

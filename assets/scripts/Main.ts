@@ -12,6 +12,7 @@ import { SearchUserPanel } from './ui/panels/user/SearchUserPanel';
 import { HttpRequestMaker } from './network/HttpRequestMaker';
 import { ChatController } from './ui/controllers/ChatController';
 import { ISessionController } from './ui/controllers/ISessionController';
+import { ChatPanel } from './ui/panels/chat/ChatPanel';
 const { ccclass, property } = _decorator;
 
 const panelsGroup: string = "Panels";
@@ -55,6 +56,15 @@ export class Main extends Component {
     })
     searchUserPanel: SearchUserPanel = null;
 
+    //chat
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: ChatPanel
+    })
+    chatPanel: ChatPanel = null;
+
     //other
     @property({
         group: {
@@ -95,7 +105,7 @@ export class Main extends Component {
 
         this._sessionControllers = [
             new UserController(this._httpRequestMaker, this.searchButtonPanel, this.searchUserPanel),
-            new ChatController()
+            new ChatController(this._httpRequestMaker, this.chatPanel)
         ]
     }
 

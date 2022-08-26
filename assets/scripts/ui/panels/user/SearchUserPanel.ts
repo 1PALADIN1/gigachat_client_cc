@@ -1,5 +1,5 @@
 import { _decorator, Component, Node, Button, EditBox } from 'cc';
-import { IUserInfo } from '../../controllers/IUserInfo';
+import { IUserInfo } from '../../../entity/IUserInfo';
 import { SearchResults } from './SearchResults';
 const { ccclass, property } = _decorator;
 
