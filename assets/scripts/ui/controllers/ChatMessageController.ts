@@ -2,6 +2,7 @@ import { UserSession } from "../../network/auth/UserSession";
 import { ChatMessagePanel } from "../panels/chat/ChatMessagePanel";
 import { ISessionController } from "./ISessionController";
 import { Node } from "cc"; 
+import { IMessageInfo } from "../../entity/IMessageInfo";
 
 enum PanelType {
     NONE,
@@ -28,6 +29,53 @@ export class ChatMessageController implements ISessionController {
 
     activate() {
         this._setActivePanel(PanelType.CHAT_SELECTED);
+
+        this._chatMessagePanel.chatNameLabel.string = "NICE CHAT";
+        let testMessages: IMessageInfo[] = [
+            {
+                message: "Hello dude! How are you?",
+                sendTime: "11:20 23.01.2020",
+                userId: 1,
+                username: "Nice BOY 11",
+                isUser: false
+            },
+            {
+                message: "Hello dude! How are you?",
+                sendTime: "11:21 23.01.2020",
+                userId: 1,
+                username: "Nice BOY 11",
+                isUser: false
+            },
+            {
+                message: "Hi!",
+                sendTime: "11:23 23.01.2020",
+                userId: 2,
+                username: "Me",
+                isUser: true
+            },
+            {
+                message: "Fine! thanks",
+                sendTime: "11:24 23.01.2020",
+                userId: 2,
+                username: "Me",
+                isUser: true
+            },
+            {
+                message: "Nice to hear that",
+                sendTime: "11:24 23.01.2020",
+                userId: 1,
+                username: "Nice BOY 11",
+                isUser: false
+            },
+            {
+                message: "Bla bla bla",
+                sendTime: "11:25 23.01.2020",
+                userId: 1,
+                username: "Nice BOY 11",
+                isUser: false
+            },
+        ];
+        this._chatMessagePanel.refreshMessages(testMessages);
     }
 
     deactivate() {
@@ -35,6 +83,7 @@ export class ChatMessageController implements ISessionController {
     }
 
     // ================== SWITCHING PANELS ==================
+
     private _setActivePanel(panelType: PanelType) {
         switch (panelType) {
             case PanelType.NONE: {

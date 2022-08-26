@@ -1,7 +1,7 @@
-import { IUserInfo } from "./IUserInfo";
-
 export interface IMessageInfo {
     message: string,
     sendTime: string,
-    fromUser: IUserInfo
+    userId: number;
+    username: string;
+    isUser: boolean;
 }
