@@ -32,6 +32,7 @@ export class ChatController implements ISessionController {
 
     deactivate() {
         this._chat.eventTarget.off(EventConstants.CHAT_START, this._onChatStarted, this);
+        this._chatPanel.eventTarget.off(EventConstants.CHAT_SELECTED, this._onChatSelected, this);
 
         this._setChatPanelVisible(false);
     }
@@ -54,7 +55,6 @@ export class ChatController implements ISessionController {
     // ================== UI CALLBACKS ==================
 
     private _onChatSelected(chat: IChatInfo) {
-        console.log("Chat selected: ", chat.title); //TODO
         this._chat.setActiveChat(chat);
     }
 

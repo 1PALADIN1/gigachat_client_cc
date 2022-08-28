@@ -5,7 +5,7 @@ import { AuthPanel } from './ui/panels/auth/AuthPanel';
 import { InfoPanel } from './ui/panels/InfoPanel';
 import { RegisterPanel } from './ui/panels/auth/RegisterPanel';
 import { UserController } from './ui/controllers/UserController';
-import { IConnectionManager, ConnectionManager, WsResultEvent } from './network/ws/ConnectionManager';
+import { IWsManager, WsManager } from './network/ws/WsManager';
 import { UserSession } from './network/auth/UserSession';
 import { SearchButtonPanel } from './ui/panels/user/SearchButtonPanel';
 import { SearchUserPanel } from './ui/panels/user/SearchUserPanel';
@@ -16,6 +16,7 @@ import { ChatPanel } from './ui/panels/chat/ChatPanel';
 import { ChatMessageController } from './ui/controllers/ChatMessageController';
 import { ChatMessagePanel } from './ui/panels/chat/ChatMessagePanel';
 import { Chat, IChat } from './chat/Chat';
+import { EventConstants } from './EventConstants';
 const { ccclass, property } = _decorator;
 
 const panelsGroup: string = "Panels";
@@ -94,7 +95,7 @@ export class Main extends Component {
     //models
     private _auth: IAuth;
     private _chat: IChat;
-    private _connectionManager: IConnectionManager;
+    private _wsManager: IWsManager;
     private _httpRequestMaker: HttpRequestMaker;
     //controllers
     private _authController: AuthController;
@@ -106,7 +107,7 @@ export class Main extends Component {
     }
 
     onDestroy() {
-        this._connectionManager.dispose();
+        this._wsManager.dispose();
 
         this._authController.deactivate();
         for (let i = 0; i < this._sessionControllers.length; i++) {
@@ -115,7 +116,7 @@ export class Main extends Component {
     }
 
     private _buildUp() {
-        this._connectionManager = new ConnectionManager();
+        this._wsManager = new WsManager();
         this._httpRequestMaker = new HttpRequestMaker();
         this._auth = new Auth(this._httpRequestMaker);
         this._chat = new Chat(this._httpRequestMaker);
@@ -125,7 +126,7 @@ export class Main extends Component {
         this._sessionControllers = [
             new UserController(this._chat, this._httpRequestMaker, this.searchButtonPanel, this.searchUserPanel),
             new ChatController(this._chat, this.chatPanel),
-            new ChatMessageController(this._chat, this.chatMessagePanel, this.noChatSelectedPanel)
+            new ChatMessageController(this._chat, this._wsManager, this.chatMessagePanel, this.noChatSelectedPanel)
         ]
     }
 
@@ -138,7 +139,7 @@ export class Main extends Component {
         this._authController.authResultEvent.off(AuthResultEvent.SUCCESS, this._onAuthSuccess, this);
         this._authController.deactivate();
 
-        this._connectionManager.connect(userSession, (result, message) => {
+        this._wsManager.connect(userSession, (result, message) => {
             if (!result) {
                 console.error(message);
                 this._startAuth();
@@ -148,8 +149,8 @@ export class Main extends Component {
             this._chat.bindSession(userSession);
 
             //listen connection events
-            this._connectionManager.wsResultEvent.on(WsResultEvent.ERROR, this._disconnected, this);
-            this._connectionManager.wsResultEvent.on(WsResultEvent.CLOSED, this._disconnected, this);
+            this._wsManager.eventTarget.on(EventConstants.WS_ERROR, this._disconnected, this);
+            this._wsManager.eventTarget.on(EventConstants.WS_CLOSED, this._disconnected, this);
 
             //activate controllers
             for (let i = 0; i < this._sessionControllers.length; i++) {
@@ -163,8 +164,8 @@ export class Main extends Component {
     private _disconnected(message: string) {
         console.log("Connection closed: " + message);
 
-        this._connectionManager.wsResultEvent.off(WsResultEvent.ERROR, this._disconnected, this);
-        this._connectionManager.wsResultEvent.off(WsResultEvent.CLOSED, this._disconnected, this);
+        this._wsManager.eventTarget.off(EventConstants.WS_ERROR, this._disconnected, this);
+        this._wsManager.eventTarget.off(EventConstants.WS_CLOSED, this._disconnected, this);
 
         //deactivate controllers
         for (let i = 0; i < this._sessionControllers.length; i++) {

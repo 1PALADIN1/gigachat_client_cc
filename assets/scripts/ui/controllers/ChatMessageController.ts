@@ -5,6 +5,8 @@ import { Node } from "cc";
 import { IChat } from "../../chat/Chat";
 import { EventConstants } from "../../EventConstants";
 import { IMessageInfo } from "../../entity/IMessageInfo";
+import { IWsManager } from "../../network/ws/WsManager";
+import { UiConstants } from "../UiConstants";
 
 enum PanelType {
     NONE,
@@ -14,13 +16,16 @@ enum PanelType {
 
 export class ChatMessageController implements ISessionController {
     private _userSession: UserSession; //TODO: use model
+    
     private _chat: IChat;
+    private _wsManager: IWsManager;
 
     private _chatMessagePanel: ChatMessagePanel;
     private _noChatSelectedPanel: Node;
 
-    constructor(chat: IChat, chatMessagePanel: ChatMessagePanel, noChatSelectedPanel: Node) {
+    constructor(chat: IChat, wsManager: IWsManager, chatMessagePanel: ChatMessagePanel, noChatSelectedPanel: Node) {
         this._chat = chat;
+        this._wsManager = wsManager;
         this._chatMessagePanel = chatMessagePanel;
         this._noChatSelectedPanel = noChatSelectedPanel;
 
@@ -33,6 +38,9 @@ export class ChatMessageController implements ISessionController {
 
     activate() {
         this._chat.eventTarget.on(EventConstants.CHAT_SET_ACTIVE, this._onActiveChatSet, this);
+        this._wsManager.eventTarget.on(EventConstants.WS_GOT_MESSAGE, this._onGotMessage, this);
+        this._chatMessagePanel.sendButton.node.on(UiConstants.buttonClickEvent, this._onSendButtonClicked, this);
+        this._chatMessagePanel.messageText.node.on(UiConstants.editingReturn, this._onSendButtonClicked, this);
 
         let activePanel = this._chat.hasActiveChat ? PanelType.CHAT_SELECTED : PanelType.NOT_SELECTED;
         this._setActivePanel(activePanel);
@@ -40,63 +48,49 @@ export class ChatMessageController implements ISessionController {
 
     deactivate() {
         this._chat.eventTarget.off(EventConstants.CHAT_SET_ACTIVE, this._onActiveChatSet, this);
+        this._wsManager.eventTarget.off(EventConstants.WS_GOT_MESSAGE, this._onGotMessage, this);
+        this._chatMessagePanel.sendButton.node.off(UiConstants.buttonClickEvent, this._onSendButtonClicked, this);
+        this._chatMessagePanel.messageText.node.off(UiConstants.editingReturn, this._onSendButtonClicked, this);
 
         this._setActivePanel(PanelType.NONE);
     }
 
     // ================== MODEL CALLBACKS ==================
 
-    private _onActiveChatSet() {
+    private _onActiveChatSet(messages: IMessageInfo[]) {
         this._setActivePanel(PanelType.CHAT_SELECTED);
         this._chatMessagePanel.setChatName(this._chat.activeChat.title);
+        this._chatMessagePanel.refreshMessages(messages);
+    }
 
-        //TODO
-        this._chatMessagePanel.chatNameLabel.string = "NICE CHAT";
-        let testMessages: IMessageInfo[] = [
-            {
-                message: "Hello dude! How are you?",
-                sendTime: "11:20 23.01.2020",
-                userId: 1,
-                username: "Nice BOY 11",
-                isUser: false
-            },
-            {
-                message: "Hello dude! How are you?",
-                sendTime: "11:21 23.01.2020",
-                userId: 1,
-                username: "Nice BOY 11",
-                isUser: false
-            },
-            {
-                message: "Hi!",
-                sendTime: "11:23 23.01.2020",
-                userId: 2,
-                username: "Me",
-                isUser: true
-            },
-            {
-                message: "Fine! thanks",
-                sendTime: "11:24 23.01.2020",
-                userId: 2,
-                username: "Me",
-                isUser: true
-            },
-            {
-                message: "Nice to hear that",
-                sendTime: "11:24 23.01.2020",
-                userId: 1,
-                username: "Nice BOY 11",
-                isUser: false
-            },
-            {
-                message: "Bla bla bla",
-                sendTime: "11:25 23.01.2020",
-                userId: 1,
-                username: "Nice BOY 11",
-                isUser: false
-            },
-        ];
-        this._chatMessagePanel.refreshMessages(testMessages);
+    private _onGotMessage(message: string) {
+        //TODO: DRY
+        let resp = JSON.parse(message);
+        let userId: number = resp["user"]["id"];
+        let isUser: boolean = userId == this._userSession.userId;
+
+        let data: IMessageInfo = {
+            message: resp["text"],
+            sendTime: resp["send_time"],
+            userId: userId,
+            username: isUser ? "Me" : resp["user"]["username"],
+            isUser: isUser
+        };
+
+        this._chatMessagePanel.appendMessage(data, true);
+        this._chatMessagePanel.messageText.focus();
+    }
+
+    // ================== UI CALLBACKS ==================
+
+    private _onSendButtonClicked() {
+        let message = this._chatMessagePanel.messageText.string.trim();
+        this._chatMessagePanel.messageText.string = "";
+        if (message == "") {
+            return;
+        }
+
+        this._wsManager.writeMessage(this._chat.activeChat.id, message);
     }
 
     // ================== SWITCHING PANELS ==================

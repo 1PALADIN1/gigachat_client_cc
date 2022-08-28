@@ -2,29 +2,21 @@ import { IDisposable } from "../../IDisposable";
 import { ApiConstants } from "../ApiConstants";
 import { UserSession } from "../auth/UserSession";
 import { EventTarget } from 'cc';
+import { EventConstants } from "../../EventConstants";
 
-export interface IConnectionManager extends IDisposable {
-    wsResultEvent: EventTarget;
+export interface IWsManager extends IDisposable {
+    eventTarget: EventTarget;
 
     isActive();
     connect(userSession: UserSession, callback: (result: boolean, message: string) => void);
+    writeMessage(chat_id: number, message: string);
 }
 
-export enum WsResultEvent {
-    ERROR = "error",
-    GOT_MESSAGE = "got_message",
-    CLOSED = "closed"
-}
-
-export class ConnectionManager implements IConnectionManager {
+export class WsManager implements IWsManager {
     private _userSession: UserSession;
     private _ws: WebSocket;
 
-    wsResultEvent: EventTarget;
-
-    constructor() {
-        this.wsResultEvent = new EventTarget();
-    }
+    eventTarget: EventTarget = new EventTarget();
 
     isActive() {
         return this._userSession != null
@@ -57,18 +49,31 @@ export class ConnectionManager implements IConnectionManager {
                 return;
             }
 
-            this.wsResultEvent.emit(WsResultEvent.ERROR, "Got error from connection")
+            this.eventTarget.emit(EventConstants.WS_ERROR, "Got error from connection")
         };
 
         this._ws.onclose = (event) => {
-            this.wsResultEvent.emit(WsResultEvent.CLOSED, "WebSocket instance closed");
+            this.eventTarget.emit(EventConstants.WS_CLOSED, "WebSocket instance closed");
             this._userSession = null;
         };
 
         this._ws.onmessage = (event) => {
-            console.log("response text msg: " + event.data); //TODO
-            this.wsResultEvent.emit(WsResultEvent.GOT_MESSAGE, event.data);
+            this.eventTarget.emit(EventConstants.WS_GOT_MESSAGE, event.data);
         };
+    }
+
+    writeMessage(chat_id: number, message: string) {
+        if (!this.isActive()) {
+            console.error("WS manager is not active!");
+            return;
+        }
+
+        let data = {
+            "chat_id": chat_id,
+            "message": message
+        };
+
+        this._ws.send(JSON.stringify(data));
     }
 
     dispose() {

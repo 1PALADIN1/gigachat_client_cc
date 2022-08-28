@@ -5,6 +5,7 @@ import { UserSession } from "../network/auth/UserSession";
 import { HttpRequestMaker } from "../network/HttpRequestMaker";
 import { EventTarget } from "cc";
 import { EventConstants } from "../EventConstants";
+import { IMessageInfo } from "../entity/IMessageInfo";
 
 export interface IChat extends ISessionEntity {
     eventTarget: EventTarget;
@@ -79,11 +80,24 @@ export class Chat implements IChat {
             }
 
             let resp = JSON.parse(message);
+            let messages: IMessageInfo[] = [];
             for (let i = 0; i < resp.length; i++) {
-                //TODO: load messages
+                //TODO: DRY
+                let item = resp[i];
+                let userId: number = item["user"]["id"];
+                let isUser: boolean = userId == this._userSession.userId;
+
+                let data = {
+                    message: item["text"],
+                    sendTime: item["send_time"],
+                    userId: userId,
+                    username: isUser ? "Me" : resp["user"]["username"],
+                    isUser: userId == this._userSession.userId,
+                };
+                messages.push(data);
             }
-            
-            this.eventTarget.emit(EventConstants.CHAT_SET_ACTIVE)
+
+            this.eventTarget.emit(EventConstants.CHAT_SET_ACTIVE, messages);
         });
 
         req.send();

@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Prefab, Label, instantiate, ScrollView } from 'cc';
+import { _decorator, Component, Node, Prefab, Label, instantiate, ScrollView, EditBox, Button } from 'cc';
 import { IMessageInfo } from '../../../entity/IMessageInfo';
 import { MessageItem } from './MessageItem';
 const { ccclass, property } = _decorator;
@@ -17,6 +17,14 @@ export class ChatMessagePanel extends Component {
         type: Node
     })
     contentNode: Node = null;
+    @property({
+        type: EditBox
+    })
+    messageText: EditBox = null;
+    @property({
+        type: Button
+    })
+    sendButton: Button = null;
     @property({
         type: Prefab
     })
@@ -38,15 +46,22 @@ export class ChatMessagePanel extends Component {
         this._clearMessages();
 
         for (let i = 0; i < messages.length; i++) {
-            let message = messages[i];
-            let prefab = message.isUser ? this.userMessageItemPrefab : this.friendMessageItemPrefab;
-            let node = instantiate(prefab);
-            let messageItem = node.getComponent(MessageItem);
-            messageItem.setup(message.username, message.message, message.sendTime);
-            this.contentNode.addChild(node);
+            this.appendMessage(messages[i]);
         }
 
         this.scrollView.scrollToBottom();
+    }
+
+    appendMessage(message: IMessageInfo, scrollToBottom: boolean = false) {
+        let prefab = message.isUser ? this.userMessageItemPrefab : this.friendMessageItemPrefab;
+        let node = instantiate(prefab);
+        let messageItem = node.getComponent(MessageItem);
+        messageItem.setup(message.username, message.message, message.sendTime);
+        this.contentNode.addChild(node);
+
+        if (scrollToBottom) {
+            this.scrollView.scrollToBottom();
+        }
     }
 
     private _clearMessages() {

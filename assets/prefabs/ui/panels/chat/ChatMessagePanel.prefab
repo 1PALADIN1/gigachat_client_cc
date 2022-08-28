@@ -1606,7 +1606,7 @@
     "propertyPath": [
       "_name"
     ],
-    "value": "DefaultEdit"
+    "value": "SendMessageEdit"
   },
   {
     "__type__": "cc.TargetInfo",
@@ -2361,6 +2361,8 @@
     "contentNode": {
       "__id__": 28
     },
+    "messageText": null,
+    "sendButton": null,
     "userMessageItemPrefab": {
       "__uuid__": "3ed4d276-d5ae-408f-886f-20d1dfda1e1f",
       "__expectedType__": "cc.Prefab"
@@ -2384,6 +2386,14 @@
       "__id__": 0
     },
     "fileId": "aaCP/EplRBtry1nYMS/Ar1",
+    "targetOverrides": [
+      {
+        "__id__": 152
+      },
+      {
+        "__id__": 154
+      }
+    ],
     "nestedPrefabInstanceRoots": [
       {
         "__id__": 108
@@ -2397,6 +2407,50 @@
       {
         "__id__": 37
       }
+    ]
+  },
+  {
+    "__type__": "cc.TargetOverrideInfo",
+    "source": {
+      "__id__": 149
+    },
+    "sourceInfo": null,
+    "propertyPath": [
+      "messageText"
+    ],
+    "target": {
+      "__id__": 79
+    },
+    "targetInfo": {
+      "__id__": 153
+    }
+  },
+  {
+    "__type__": "cc.TargetInfo",
+    "localID": [
+      "45Luw0PKhMvp6D99mu5dHd"
+    ]
+  },
+  {
+    "__type__": "cc.TargetOverrideInfo",
+    "source": {
+      "__id__": 149
+    },
+    "sourceInfo": null,
+    "propertyPath": [
+      "sendButton"
+    ],
+    "target": {
+      "__id__": 108
+    },
+    "targetInfo": {
+      "__id__": 155
+    }
+  },
+  {
+    "__type__": "cc.TargetInfo",
+    "localID": [
+      "36gR+1+69H1LG7rtgQYrfo"
     ]
   }
 ]
