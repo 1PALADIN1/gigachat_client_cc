@@ -1,4 +1,5 @@
 import { _decorator, Component, Node, Label, Button, EventTarget } from 'cc';
+import { EventConstants } from '../../../EventConstants';
 import { UiConstants } from '../../UiConstants';
 const { ccclass, property } = _decorator;
 
@@ -35,7 +36,7 @@ export class SearchResultsItem extends Component {
     }
 
     private _onWriteButtonClicked() {
-        this.startChatEvent.emit(UiConstants.startChatEvent, this._userId, this._username);
+        this.startChatEvent.emit(EventConstants.CHAT_START, this._userId, this._username);
     }
 }
 

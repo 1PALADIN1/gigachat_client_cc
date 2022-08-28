@@ -17,11 +17,15 @@ export class ApiConstants {
     static readonly HTTP_POST = "POST";
     static readonly HTTP_GET = "GET";
 
-    static buildRestAddr(baseUrl: string, route: string) {
+    static buildRestAddr(baseUrl: string, route: string): string {
         return ApiConstants.REST_PREFIX + baseUrl + route;
     }
 
-    static buildWsAddr(baseUrl: string, route: string) {
+    static buildWsAddr(baseUrl: string, route: string): string {
         return ApiConstants.WS_PREFIX + baseUrl + route;
+    }
+
+    static buildChatMessagesRoute(baseUrl: string, chatId: number) {
+        return ApiConstants.REST_PREFIX + baseUrl + "/api/chat/" + chatId + "/message";
     }
 }

@@ -1,6 +1,5 @@
-import { UserSession } from "../../network/auth/UserSession";
+import { ISessionEntity } from "../../entity/ISessionEntity";
 import { IUiController } from "./IUiController";
 
-export interface ISessionController extends IUiController{
-    bindSession(userSession: UserSession);
+export interface ISessionController extends IUiController, ISessionEntity {
 }

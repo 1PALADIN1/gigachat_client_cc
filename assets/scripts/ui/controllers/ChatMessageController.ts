@@ -2,6 +2,8 @@ import { UserSession } from "../../network/auth/UserSession";
 import { ChatMessagePanel } from "../panels/chat/ChatMessagePanel";
 import { ISessionController } from "./ISessionController";
 import { Node } from "cc"; 
+import { IChat } from "../../chat/Chat";
+import { EventConstants } from "../../EventConstants";
 import { IMessageInfo } from "../../entity/IMessageInfo";
 
 enum PanelType {
@@ -11,12 +13,14 @@ enum PanelType {
 }
 
 export class ChatMessageController implements ISessionController {
-    private _userSession: UserSession;
+    private _userSession: UserSession; //TODO: use model
+    private _chat: IChat;
 
     private _chatMessagePanel: ChatMessagePanel;
     private _noChatSelectedPanel: Node;
 
-    constructor(chatMessagePanel: ChatMessagePanel, noChatSelectedPanel: Node) {
+    constructor(chat: IChat, chatMessagePanel: ChatMessagePanel, noChatSelectedPanel: Node) {
+        this._chat = chat;
         this._chatMessagePanel = chatMessagePanel;
         this._noChatSelectedPanel = noChatSelectedPanel;
 
@@ -28,8 +32,25 @@ export class ChatMessageController implements ISessionController {
     }
 
     activate() {
-        this._setActivePanel(PanelType.CHAT_SELECTED);
+        this._chat.eventTarget.on(EventConstants.CHAT_SET_ACTIVE, this._onActiveChatSet, this);
 
+        let activePanel = this._chat.hasActiveChat ? PanelType.CHAT_SELECTED : PanelType.NOT_SELECTED;
+        this._setActivePanel(activePanel);
+    }
+
+    deactivate() {
+        this._chat.eventTarget.off(EventConstants.CHAT_SET_ACTIVE, this._onActiveChatSet, this);
+
+        this._setActivePanel(PanelType.NONE);
+    }
+
+    // ================== MODEL CALLBACKS ==================
+
+    private _onActiveChatSet() {
+        this._setActivePanel(PanelType.CHAT_SELECTED);
+        this._chatMessagePanel.setChatName(this._chat.activeChat.title);
+
+        //TODO
         this._chatMessagePanel.chatNameLabel.string = "NICE CHAT";
         let testMessages: IMessageInfo[] = [
             {
@@ -76,10 +97,6 @@ export class ChatMessageController implements ISessionController {
             },
         ];
         this._chatMessagePanel.refreshMessages(testMessages);
-    }
-
-    deactivate() {
-        this._setActivePanel(PanelType.NONE);
     }
 
     // ================== SWITCHING PANELS ==================

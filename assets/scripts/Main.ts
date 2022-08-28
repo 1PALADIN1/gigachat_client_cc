@@ -15,6 +15,7 @@ import { ISessionController } from './ui/controllers/ISessionController';
 import { ChatPanel } from './ui/panels/chat/ChatPanel';
 import { ChatMessageController } from './ui/controllers/ChatMessageController';
 import { ChatMessagePanel } from './ui/panels/chat/ChatMessagePanel';
+import { Chat, IChat } from './chat/Chat';
 const { ccclass, property } = _decorator;
 
 const panelsGroup: string = "Panels";
@@ -92,6 +93,7 @@ export class Main extends Component {
 
     //models
     private _auth: IAuth;
+    private _chat: IChat;
     private _connectionManager: IConnectionManager;
     private _httpRequestMaker: HttpRequestMaker;
     //controllers
@@ -116,13 +118,14 @@ export class Main extends Component {
         this._connectionManager = new ConnectionManager();
         this._httpRequestMaker = new HttpRequestMaker();
         this._auth = new Auth(this._httpRequestMaker);
+        this._chat = new Chat(this._httpRequestMaker);
 
         this._authController = new AuthController(this._auth, this.authPanel, this.registerPanel, this.infoPanel, this.serverUrl);
 
         this._sessionControllers = [
-            new UserController(this._httpRequestMaker, this.searchButtonPanel, this.searchUserPanel),
-            new ChatController(this._httpRequestMaker, this.chatPanel),
-            new ChatMessageController(this.chatMessagePanel, this.noChatSelectedPanel)
+            new UserController(this._chat, this._httpRequestMaker, this.searchButtonPanel, this.searchUserPanel),
+            new ChatController(this._chat, this.chatPanel),
+            new ChatMessageController(this._chat, this.chatMessagePanel, this.noChatSelectedPanel)
         ]
     }
 
@@ -141,6 +144,8 @@ export class Main extends Component {
                 this._startAuth();
                 return;
             }
+
+            this._chat.bindSession(userSession);
 
             //listen connection events
             this._connectionManager.wsResultEvent.on(WsResultEvent.ERROR, this._disconnected, this);

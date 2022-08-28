@@ -30,6 +30,10 @@ export class ChatMessagePanel extends Component {
         this._clearMessages();
     }
 
+    setChatName(chatName: string) {
+        this.chatNameLabel.string = chatName;
+    }
+
     refreshMessages(messages: IMessageInfo[]) {
         this._clearMessages();
 

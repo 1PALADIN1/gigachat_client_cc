@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, Prefab, instantiate, EventTarget } from 'cc';
 import { IUserInfo } from '../../../entity/IUserInfo';
-import { UiConstants } from '../../UiConstants';
+import { EventConstants } from '../../../EventConstants';
 import { SearchResultsItem } from './SearchResultsItem';
 const { ccclass, property } = _decorator;
 
@@ -29,7 +29,7 @@ export class SearchResults extends Component {
             this.resultsRoot.addChild(node);
             let searchItem = node.getComponent(SearchResultsItem);
             searchItem.setup(users[i].id, users[i].username);
-            searchItem.startChatEvent.on(UiConstants.startChatEvent, this._onChatButtonClicked, this);
+            searchItem.startChatEvent.on(EventConstants.CHAT_START, this._onChatButtonClicked, this);
         }
     }
 
@@ -41,13 +41,13 @@ export class SearchResults extends Component {
 
         for (let i = 0; i < childs.length; i++) {
             let searchItem = childs[i].getComponent(SearchResultsItem);
-            searchItem.startChatEvent.off(UiConstants.startChatEvent, this._onChatButtonClicked, this);
+            searchItem.startChatEvent.off(EventConstants.CHAT_START, this._onChatButtonClicked, this);
             childs[i].destroy();
         }
     }
 
     private _onChatButtonClicked(userId: number, username: string) {
-        this.startChatEvent.emit(UiConstants.startChatEvent, userId, username);
+        this.startChatEvent.emit(EventConstants.CHAT_START, userId, username);
     }
 }
 

@@ -6,6 +6,8 @@ import { SearchUserPanel } from "../panels/user/SearchUserPanel";
 import { UiConstants } from "../UiConstants";
 import { ISessionController } from "./ISessionController";
 import { IUserInfo } from "../../entity/IUserInfo";
+import { EventConstants } from "../../EventConstants";
+import { IChat } from "../../chat/Chat";
 
 enum PanelType {
     NONE,
@@ -22,10 +24,12 @@ export class UserController implements ISessionController {
     //models
     private _httpRequestMaker: HttpRequestMaker;
     private _userSession: UserSession;
+    private _chat: IChat;
 
     private _searchInProgress: boolean;
 
-    constructor(httpRequestMaker: HttpRequestMaker, searchButtonPanel: SearchButtonPanel, searchUserPanel: SearchUserPanel) {
+    constructor(chat: IChat, httpRequestMaker: HttpRequestMaker, searchButtonPanel: SearchButtonPanel, searchUserPanel: SearchUserPanel) {
+        this._chat = chat;
         this._httpRequestMaker = httpRequestMaker;
         this._searchButtonPanel = searchButtonPanel;
         this._searchUserPanel = searchUserPanel;    
@@ -45,7 +49,7 @@ export class UserController implements ISessionController {
         this._searchUserPanel.closeButton.node.on(UiConstants.buttonClickEvent, this._onCloseSearchPanelClicked, this);
         this._searchUserPanel.searchButton.node.on(UiConstants.buttonClickEvent, this._onSearchUserClicked, this);
         this._searchUserPanel.searchText.node.on(UiConstants.editingReturn, this._onSearchUserClicked, this);
-        this._searchUserPanel.searchResults.startChatEvent.on(UiConstants.startChatEvent, this._onStartChat, this);
+        this._searchUserPanel.searchResults.startChatEvent.on(EventConstants.CHAT_START, this._onStartChat, this);
     }
 
     deactivate() {
@@ -55,7 +59,7 @@ export class UserController implements ISessionController {
         this._searchUserPanel.closeButton.node.off(UiConstants.buttonClickEvent, this._onCloseSearchPanelClicked, this);
         this._searchUserPanel.searchButton.node.off(UiConstants.buttonClickEvent, this._onSearchUserClicked, this);
         this._searchUserPanel.searchText.node.off(UiConstants.editingReturn, this._onSearchUserClicked, this);
-        this._searchUserPanel.searchResults.startChatEvent.off(UiConstants.startChatEvent, this._onStartChat, this);
+        this._searchUserPanel.searchResults.startChatEvent.off(EventConstants.CHAT_START, this._onStartChat, this);
     }
 
     // ================== SEARCH PANEL METHODS ==================
@@ -77,6 +81,7 @@ export class UserController implements ISessionController {
         
         this._searchInProgress = true;
         this._searchUserPanel.searchText.string = "";
+        //TODO: use model
         let url = ApiConstants.buildRestAddr(this._userSession.baseServerUrl, ApiConstants.FIND_USER_ROUTE) + "/" + searchString;
         let req = this._httpRequestMaker.createNewRequestWithAuth(url, ApiConstants.HTTP_GET, this._userSession, (error, message) => {
             this._searchInProgress = false;
@@ -88,29 +93,13 @@ export class UserController implements ISessionController {
             let resp: IUserInfo[] = JSON.parse(message.toString());
             this._searchUserPanel.setResults(resp);
         });
+
         req.send();
     }
 
     private _onStartChat(userId: number, username: string) {
-        let url = ApiConstants.buildRestAddr(this._userSession.baseServerUrl, ApiConstants.CHAT_ROUTE);
-        let req = this._httpRequestMaker.createNewRequestWithAuth(url, ApiConstants.HTTP_POST, this._userSession, (error, message) => {
-            if (error) {
-                console.error(message);
-                return;
-            }
-
-            this._setActivePanel(PanelType.SEARCH_BUTTON);
-        });
-
-        let data = {
-            title: this._userSession.username + " " + username,
-            user_ids: [
-                this._userSession.userId,
-                userId
-            ]
-        }
-
-        req.send(JSON.stringify(data));
+        this._chat.startChatWithUser(userId, username);
+        this._setActivePanel(PanelType.SEARCH_BUTTON);
     }
 
     // ================== SEARCH BUTTON METHODS ==================

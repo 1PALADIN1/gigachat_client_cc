@@ -1,18 +1,18 @@
+import { IChat } from "../../chat/Chat";
 import { IChatInfo } from "../../entity/IChatInfo";
-import { ApiConstants } from "../../network/ApiConstants";
+import { EventConstants } from "../../EventConstants";
 import { UserSession } from "../../network/auth/UserSession";
-import { HttpRequestMaker } from "../../network/HttpRequestMaker";
 import { ChatPanel } from "../panels/chat/ChatPanel";
 import { ISessionController } from "./ISessionController";
 
 export class ChatController implements ISessionController {
-    private _userSession: UserSession;
-    private _httpRequestMaker: HttpRequestMaker;
+    private _userSession: UserSession; //TODO: use model
+    private _chat: IChat;
 
     private _chatPanel: ChatPanel;
 
-    constructor(httpRequestMaker: HttpRequestMaker, chatPanel: ChatPanel) {
-        this._httpRequestMaker = httpRequestMaker;
+    constructor(chat: IChat, chatPanel: ChatPanel) {
+        this._chat = chat;
         this._chatPanel = chatPanel;
 
         this._setChatPanelVisible(false);
@@ -24,27 +24,38 @@ export class ChatController implements ISessionController {
     
     activate() {
         this._setChatPanelVisible(true);
-
         this._refreshChats();
+
+        this._chat.eventTarget.on(EventConstants.CHAT_START, this._onChatStarted, this);
+        this._chatPanel.eventTarget.on(EventConstants.CHAT_SELECTED, this._onChatSelected, this);
     }
 
     deactivate() {
+        this._chat.eventTarget.off(EventConstants.CHAT_START, this._onChatStarted, this);
+
         this._setChatPanelVisible(false);
     }
 
     private _refreshChats() {
-        let url = ApiConstants.buildRestAddr(this._userSession.baseServerUrl, ApiConstants.CHAT_ROUTE);
-        let req = this._httpRequestMaker.createNewRequestWithAuth(url, ApiConstants.HTTP_GET, this._userSession, (error, message) => {
-            if (error) {
-                console.error(message);
-                return;
+        this._chat.fetchUserChats((result) => {
+            if (result != null) {
+                this._chatPanel.refreshChats(result);
             }
-            
-            let resp: IChatInfo[] = JSON.parse(message);
-            this._chatPanel.refreshChats(resp);
         });
+    }
 
-        req.send();
+    // ================== MODEL CALLBACKS ==================
+
+    private _onChatStarted(chat: IChatInfo) {
+        this._chat.setActiveChat(chat);
+        this._refreshChats();
+    }
+
+    // ================== UI CALLBACKS ==================
+
+    private _onChatSelected(chat: IChatInfo) {
+        console.log("Chat selected: ", chat.title); //TODO
+        this._chat.setActiveChat(chat);
     }
 
     // ================== PANEL METHODS ==================
