@@ -33,6 +33,7 @@ export class Chat implements IChat {
     }
 
     bindSession(userSession: UserSession) {
+        this._activeChat = null;
         this._userSession = userSession;
     }
 
