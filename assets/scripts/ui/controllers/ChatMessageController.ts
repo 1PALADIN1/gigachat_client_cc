@@ -7,6 +7,8 @@ import { EventConstants } from "../../EventConstants";
 import { IMessageInfo } from "../../entity/IMessageInfo";
 import { IWsManager } from "../../network/ws/WsManager";
 import { UiConstants } from "../UiConstants";
+import { MessageCommand } from "../../network/ws/MessageCommand";
+import { MessageHelper } from "../../helper/MessageHelper";
 
 enum PanelType {
     NONE,
@@ -64,19 +66,18 @@ export class ChatMessageController implements ISessionController {
     }
 
     private _onGotMessage(message: string) {
-        //TODO: DRY
         let resp = JSON.parse(message);
-        let userId: number = resp["user"]["id"];
-        let isUser: boolean = userId == this._userSession.userId;
+        if (resp["cmd"] != MessageCommand.MESSAGE) {
+            return;
+        }
 
-        let data: IMessageInfo = {
-            message: resp["text"],
-            sendTime: resp["send_time"],
-            userId: userId,
-            username: isUser ? "Me" : resp["user"]["username"],
-            isUser: isUser
-        };
+        let payload = resp["payload"]
+        let chatId: number = payload["chat_id"]
+        if (!this._chat.hasActiveChat || chatId != this._chat.activeChat.id) {
+            return;
+        }
 
+        let data = MessageHelper.parseMessage(payload, this._userSession.userId);
         this._chatMessagePanel.appendMessage(data, true);
         this._chatMessagePanel.messageText.focus();
     }
