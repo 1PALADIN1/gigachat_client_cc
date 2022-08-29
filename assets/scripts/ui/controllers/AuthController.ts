@@ -1,9 +1,11 @@
-import { IDisposable } from "../../IDisposable";
 import { AuthEventType, IAuth } from "../../network/auth/Auth";
 import { UserSession } from "../../network/auth/UserSession";
-import { AuthPanel } from "../panels/AuthPanel";
+import { AuthPanel } from "../panels/auth/AuthPanel";
 import { InfoPanel } from "../panels/InfoPanel";
-import { RegisterPanel } from "../panels/RegisterPanel";
+import { RegisterPanel } from "../panels/auth/RegisterPanel";
+import { IUiController } from "./IUiController";
+import { EventTarget } from 'cc';
+import { UiConstants } from "../UiConstants";
 
 enum PanelType {
     NONE,
@@ -12,10 +14,13 @@ enum PanelType {
     INFO
 }
 
-const connectingMessage: string = "Connecting...";
-const buttonClickEvent: string = "click";
+export enum AuthResultEvent {
+    SUCCESS = "success"
+}
 
-export class AuthController implements IDisposable {
+const connectingMessage: string = "Connecting...";
+
+export class AuthController implements IUiController {
     private _auth: IAuth;
 
     private _authPanel: AuthPanel;
@@ -24,7 +29,9 @@ export class AuthController implements IDisposable {
 
     private _defaultServerUrl: string;
 
-    private _activePanelType?:  PanelType;
+    private _activePanelType?: PanelType;
+
+    authResultEvent: EventTarget;
 
     constructor(auth: IAuth, authPanel: AuthPanel, registerPanel: RegisterPanel, infoPanel: InfoPanel, defaultServerUrl: string) {
         this._auth = auth;
@@ -32,42 +39,42 @@ export class AuthController implements IDisposable {
         this._registerPanel = registerPanel;
         this._infoPanel = infoPanel;
         this._defaultServerUrl = defaultServerUrl;
+        this.authResultEvent = new EventTarget();
+
+        this._auth.baseUrl = this._defaultServerUrl;
+        this._authPanel.setServerUrl(this._defaultServerUrl);
+
+        this._setActivePanel(PanelType.NONE);
+    }
+
+    activate() {
+        this._setActivePanel(PanelType.AUTH);
 
         //auth model
         this._auth.authResultEvent.on(AuthEventType.SIGN_IN_SUCCESS, this._signInSuccess, this);
         this._auth.authResultEvent.on(AuthEventType.SIGN_UP_SUCCESS, this._signUpSuccess, this);
         this._auth.authResultEvent.on(AuthEventType.ERROR, this._authError, this);
         //auth panel buttons
-        this._authPanel.loginButton.node.on(buttonClickEvent, this._onSignInClicked, this);
-        this._authPanel.registerButton.node.on(buttonClickEvent, this._onMoveToRegisterClicked, this);
+        this._authPanel.loginButton.node.on(UiConstants.buttonClickEvent, this._onSignInClicked, this);
+        this._authPanel.registerButton.node.on(UiConstants.buttonClickEvent, this._onMoveToRegisterClicked, this);
         //register panel buttons
-        this._registerPanel.closeButton.node.on(buttonClickEvent, this._onSignUpClosed, this);
-        this._registerPanel.registerButton.node.on(buttonClickEvent, this._onSignUpClicked, this);
-
-        this._auth.baseUrl = this._defaultServerUrl;
-        this._authPanel.setServerUrl(this._defaultServerUrl);
-
-        this._authPanel.usernameText.string = "username" //TODO: for debug
-        this._authPanel.passwordText.string = "password"; //TODO: for debug
-
-        this._setActivePanel(PanelType.NONE);
+        this._registerPanel.closeButton.node.on(UiConstants.buttonClickEvent, this._onSignUpClosed, this);
+        this._registerPanel.registerButton.node.on(UiConstants.buttonClickEvent, this._onSignUpClicked, this);
     }
 
-    dispose() {
-        //auth model
-        this._auth.authResultEvent.off(AuthEventType.SIGN_IN_SUCCESS, this._signInSuccess, this);
-        this._auth.authResultEvent.off(AuthEventType.SIGN_UP_SUCCESS, this._signUpSuccess, this);
-        this._auth.authResultEvent.off(AuthEventType.ERROR, this._authError, this);
-        //auth panel buttons
-        this._authPanel.loginButton.node.off(buttonClickEvent, this._onSignInClicked, this);
-        this._authPanel.registerButton.node.off(buttonClickEvent, this._onMoveToRegisterClicked, this);
-        //register panel buttons
-        this._registerPanel.closeButton.node.off(buttonClickEvent, this._onSignUpClosed, this);
-        this._registerPanel.registerButton.node.off(buttonClickEvent, this._onSignUpClicked, this);
-    }
+    deactivate() {
+         //auth model
+         this._auth.authResultEvent.off(AuthEventType.SIGN_IN_SUCCESS, this._signInSuccess, this);
+         this._auth.authResultEvent.off(AuthEventType.SIGN_UP_SUCCESS, this._signUpSuccess, this);
+         this._auth.authResultEvent.off(AuthEventType.ERROR, this._authError, this);
+         //auth panel buttons
+         this._authPanel.loginButton.node.off(UiConstants.buttonClickEvent, this._onSignInClicked, this);
+         this._authPanel.registerButton.node.off(UiConstants.buttonClickEvent, this._onMoveToRegisterClicked, this);
+         //register panel buttons
+         this._registerPanel.closeButton.node.off(UiConstants.buttonClickEvent, this._onSignUpClosed, this);
+         this._registerPanel.registerButton.node.off(UiConstants.buttonClickEvent, this._onSignUpClicked, this);
 
-    authUser() {
-        this._setActivePanel(PanelType.AUTH);
+         this._setActivePanel(PanelType.NONE);
     }
 
     private _onSignInClicked() {
@@ -125,15 +132,16 @@ export class AuthController implements IDisposable {
 
     // ================== AUTH RESULTS ==================
 
-    private _signInSuccess(mesasge: string) {
-        let session = new UserSession(mesasge);
-        console.log("Sign in success! Token: " + session.token);
+    private _signInSuccess(userId: number, username: string, token: string) {
+        let session = new UserSession(token, this._auth.baseUrl, username, userId);
+        console.log("Sign in success!");
         this._setActivePanel(PanelType.NONE);
         this._authPanel.clearEditBoxes();
+        this.authResultEvent.emit(AuthResultEvent.SUCCESS, session);
     }
 
     private _signUpSuccess(message: string) {
-        console.log("Sign up success! " + message);
+        console.log("Sign up success!");
         this._setActivePanel(PanelType.AUTH);
         this._registerPanel.clearEditBoxes();
     }
