@@ -27,7 +27,7 @@ export class ChatPanel extends Component {
         for (let i = 0; i < chats.length; i++) {
             let node = instantiate(this.chatItemPrefab);
             let instance = node.getComponent(ChatItem);
-            instance.setup(chats[i], chats[i].title, "");
+            instance.setup(chats[i]);
             instance.eventTarget.on(EventConstants.CHAT_SELECTED, this._onChatSelected, this);
             this.contentNode.addChild(node);
         }

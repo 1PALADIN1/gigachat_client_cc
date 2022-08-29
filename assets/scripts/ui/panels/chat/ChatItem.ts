@@ -5,6 +5,7 @@ import { UiConstants } from '../../UiConstants';
 const { ccclass, property } = _decorator;
 
 const noMessageText = "No messages in the chat";
+const maxMessageSymbols = 30;
 
 @ccclass('ChatItem')
 export class ChatItem extends Component {
@@ -37,10 +38,16 @@ export class ChatItem extends Component {
         }
     }
 
-    setup(chat: IChatInfo, username: string, lastMessage: string) {
+    setup(chat: IChatInfo) {
         this._chat = chat;
-        this.usernameLabel.string = username;
-        this.lastMessageLabel.string = lastMessage == "" ? noMessageText : lastMessage;
+
+        let message = this._chat.lastMessage == "" ? noMessageText : this._chat.username + ": " + this._chat.lastMessage;
+        if (message.length > maxMessageSymbols) {
+            message = message.slice(0, maxMessageSymbols) + "...";
+        }
+
+        this.usernameLabel.string = this._chat.title;
+        this.lastMessageLabel.string = message;
     }
 
     private _onChatSelected() {

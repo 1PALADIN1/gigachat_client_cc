@@ -57,8 +57,11 @@ export class Chat implements IChat {
             let chatInfo: IChatInfo = {
                 id: JSON.parse(message)["id"],
                 title: chatName,
-                description: ""
-            }
+                description: "",
+                lastMessage: "",
+                userId: 0,
+                username: ""
+            };
 
             this.eventTarget.emit(EventConstants.CHAT_START, chatInfo);
         });
@@ -115,15 +118,28 @@ export class Chat implements IChat {
                 return;
             }
             
-            let resp: IChatInfo[] = JSON.parse(message);
+            let resp = JSON.parse(message);
             if (resp != null) {
                 this._allChats = [];
                 for (let i = 0; i < resp.length; i++) {
-                    this._allChats.push(resp[i]);
+                    let item = resp[i];
+                    let userId: number = item["last_message_user_id"];
+                    let username: string = (userId == this._userSession.userId) ? "Me" : item["last_message_username"];
+
+                    let data: IChatInfo = {
+                        id: item["id"],
+                        title: item["title"],
+                        description: item["description"],
+                        lastMessage: item["last_message"],
+                        userId: userId,
+                        username: username
+                    };
+
+                    this._allChats.push(data);
                 }
             }
 
-            callback(resp);
+            callback(this._allChats);
         });
 
         req.send();

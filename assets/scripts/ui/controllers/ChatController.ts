@@ -58,11 +58,7 @@ export class ChatController implements IUiController {
             return;
         }
 
-        let payload = resp["payload"];
-        let chatId: number = payload["chat_id"];
-        if (!this._chat.hasChatInList(chatId)) {
-            this._refreshChats();
-        }
+        this._refreshChats();
     }
 
     // ================== UI CALLBACKS ==================

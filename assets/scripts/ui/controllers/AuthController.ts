@@ -60,9 +60,6 @@ export class AuthController implements IUiController {
         //register panel buttons
         this._registerPanel.closeButton.node.on(UiConstants.buttonClickEvent, this._onSignUpClosed, this);
         this._registerPanel.registerButton.node.on(UiConstants.buttonClickEvent, this._onSignUpClicked, this);
-
-        this._authPanel.usernameText.string = "username" //TODO: for debug
-        this._authPanel.passwordText.string = "password"; //TODO: for debug
     }
 
     deactivate() {
