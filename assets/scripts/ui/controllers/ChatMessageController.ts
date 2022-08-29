@@ -17,7 +17,7 @@ enum PanelType {
 }
 
 export class ChatMessageController implements ISessionController {
-    private _userSession: UserSession; //TODO: use model
+    private _userSession: UserSession;
     
     private _chat: IChat;
     private _wsManager: IWsManager;

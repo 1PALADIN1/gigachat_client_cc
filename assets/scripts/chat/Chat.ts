@@ -16,6 +16,7 @@ export interface IChat extends ISessionEntity {
 
     startChatWithUser(userId: number, username: string);
     setActiveChat(chat: IChatInfo);
+    hasChatInList(chatId: number): boolean;
     fetchUserChats(callback: (result: IChatInfo[]) => void);
 }
 
@@ -23,6 +24,7 @@ export class Chat implements IChat {
     private _httpRequestMaker: HttpRequestMaker;
     private _userSession: UserSession;
     private _activeChat: IChatInfo;
+    private _allChats: IChatInfo[] = [];
     
     eventTarget: EventTarget = new EventTarget();
 
@@ -94,6 +96,16 @@ export class Chat implements IChat {
         req.send();
     }
 
+    hasChatInList(chatId: number): boolean {
+        for (let i = 0; i < this._allChats.length; i++) {
+            if (this._allChats[i].id == chatId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     fetchUserChats(callback: (result: IChatInfo[]) => void) {
         let url = ApiConstants.buildRestAddr(this._userSession.baseServerUrl, ApiConstants.CHAT_ROUTE);
         let req = this._httpRequestMaker.createNewRequestWithAuth(url, ApiConstants.HTTP_GET, this._userSession, (error, message) => {
@@ -103,6 +115,13 @@ export class Chat implements IChat {
             }
             
             let resp: IChatInfo[] = JSON.parse(message);
+            if (resp != null) {
+                this._allChats = [];
+                for (let i = 0; i < resp.length; i++) {
+                    this._allChats.push(resp[i]);
+                }
+            }
+
             callback(resp);
         });
 

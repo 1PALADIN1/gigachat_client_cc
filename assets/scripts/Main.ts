@@ -125,7 +125,7 @@ export class Main extends Component {
 
         this._sessionControllers = [
             new UserController(this._chat, this._httpRequestMaker, this.searchButtonPanel, this.searchUserPanel),
-            new ChatController(this._chat, this.chatPanel),
+            new ChatController(this._chat, this._wsManager, this.chatPanel),
             new ChatMessageController(this._chat, this._wsManager, this.chatMessagePanel, this.noChatSelectedPanel)
         ]
     }
