@@ -11,12 +11,12 @@ import { SearchButtonPanel } from './ui/panels/user/SearchButtonPanel';
 import { SearchUserPanel } from './ui/panels/user/SearchUserPanel';
 import { HttpRequestMaker } from './network/HttpRequestMaker';
 import { ChatController } from './ui/controllers/ChatController';
-import { ISessionController } from './ui/controllers/ISessionController';
 import { ChatPanel } from './ui/panels/chat/ChatPanel';
 import { ChatMessageController } from './ui/controllers/ChatMessageController';
 import { ChatMessagePanel } from './ui/panels/chat/ChatMessagePanel';
 import { Chat, IChat } from './chat/Chat';
 import { EventConstants } from './EventConstants';
+import { IUser, User } from './user/User';
 const { ccclass, property } = _decorator;
 
 const panelsGroup: string = "Panels";
@@ -95,11 +95,14 @@ export class Main extends Component {
     //models
     private _auth: IAuth;
     private _chat: IChat;
+    private _user: IUser;
     private _wsManager: IWsManager;
     private _httpRequestMaker: HttpRequestMaker;
     //controllers
     private _authController: AuthController;
-    private _sessionControllers: Array<ISessionController>;
+    private _chatController: ChatController;
+    private _chatMessageController: ChatMessageController;
+    private _userController: UserController;
 
     start() {
         this._buildUp();
@@ -110,9 +113,9 @@ export class Main extends Component {
         this._wsManager.dispose();
 
         this._authController.deactivate();
-        for (let i = 0; i < this._sessionControllers.length; i++) {
-            this._sessionControllers[i].deactivate();
-        }
+        this._chatController.deactivate();
+        this._chatMessageController.deactivate();
+        this._userController.deactivate();
     }
 
     private _buildUp() {
@@ -120,14 +123,12 @@ export class Main extends Component {
         this._httpRequestMaker = new HttpRequestMaker();
         this._auth = new Auth(this._httpRequestMaker);
         this._chat = new Chat(this._httpRequestMaker);
+        this._user = new User(this._httpRequestMaker);
 
         this._authController = new AuthController(this._auth, this.authPanel, this.registerPanel, this.infoPanel, this.serverUrl);
-
-        this._sessionControllers = [
-            new UserController(this._chat, this._httpRequestMaker, this.searchButtonPanel, this.searchUserPanel),
-            new ChatController(this._chat, this._wsManager, this.chatPanel),
-            new ChatMessageController(this._chat, this._wsManager, this.chatMessagePanel, this.noChatSelectedPanel)
-        ]
+        this._userController = new UserController(this._chat, this._user, this.searchButtonPanel, this.searchUserPanel);
+        this._chatController = new ChatController(this._chat, this._wsManager, this.chatPanel);
+        this._chatMessageController = new ChatMessageController(this._chat, this._wsManager, this.chatMessagePanel, this.noChatSelectedPanel);
     }
 
     private _startAuth() {
@@ -147,17 +148,17 @@ export class Main extends Component {
             }
 
             this._chat.bindSession(userSession);
+            this._user.bindSession(userSession);
 
             //listen connection events
             this._wsManager.eventTarget.on(EventConstants.WS_ERROR, this._disconnected, this);
             this._wsManager.eventTarget.on(EventConstants.WS_CLOSED, this._disconnected, this);
 
             //activate controllers
-            for (let i = 0; i < this._sessionControllers.length; i++) {
-                let controller = this._sessionControllers[i];
-                controller.bindSession(userSession);
-                controller.activate();
-            }
+            this._chatController.activate();
+            this._chatMessageController.activate();
+            this._chatMessageController.bindSession(userSession);
+            this._userController.activate();
         });
     }
 
@@ -168,9 +169,9 @@ export class Main extends Component {
         this._wsManager.eventTarget.off(EventConstants.WS_CLOSED, this._disconnected, this);
 
         //deactivate controllers
-        for (let i = 0; i < this._sessionControllers.length; i++) {
-            this._sessionControllers[i].deactivate();
-        }
+        this._chatController.deactivate();
+        this._chatMessageController.deactivate();
+        this._userController.deactivate();
         
         this._startAuth();
     }

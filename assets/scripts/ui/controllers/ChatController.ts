@@ -1,14 +1,12 @@
 import { IChat } from "../../chat/Chat";
 import { IChatInfo } from "../../entity/IChatInfo";
 import { EventConstants } from "../../EventConstants";
-import { UserSession } from "../../network/auth/UserSession";
 import { MessageCommand } from "../../network/ws/MessageCommand";
 import { IWsManager } from "../../network/ws/WsManager";
 import { ChatPanel } from "../panels/chat/ChatPanel";
-import { ISessionController } from "./ISessionController";
+import { IUiController } from "./IUiController";
 
-export class ChatController implements ISessionController {
-    private _userSession: UserSession; //TODO: use model
+export class ChatController implements IUiController {
     private _chat: IChat;
     private _wsManager: IWsManager;
 
@@ -20,10 +18,6 @@ export class ChatController implements ISessionController {
         this._chatPanel = chatPanel;
 
         this._setChatPanelVisible(false);
-    }
-
-    bindSession(userSession: UserSession) {
-        this._userSession = userSession;
     }
     
     activate() {

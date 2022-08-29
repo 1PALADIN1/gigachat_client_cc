@@ -1,13 +1,11 @@
-import { ApiConstants } from "../../network/ApiConstants";
-import { UserSession } from "../../network/auth/UserSession";
-import { HttpRequestMaker } from "../../network/HttpRequestMaker";
 import { SearchButtonPanel } from "../panels/user/SearchButtonPanel";
 import { SearchUserPanel } from "../panels/user/SearchUserPanel";
 import { UiConstants } from "../UiConstants";
-import { ISessionController } from "./ISessionController";
-import { IUserInfo } from "../../entity/IUserInfo";
 import { EventConstants } from "../../EventConstants";
 import { IChat } from "../../chat/Chat";
+import { IUiController } from "./IUiController";
+import { IUser } from "../../user/User";
+import { IUserInfo } from "../../entity/IUserInfo";
 
 enum PanelType {
     NONE,
@@ -17,20 +15,19 @@ enum PanelType {
 
 const minSearchSymbols: number = 3;
 
-export class UserController implements ISessionController {
+export class UserController implements IUiController {
     //panels
     private _searchButtonPanel: SearchButtonPanel;
     private _searchUserPanel: SearchUserPanel;
     //models
-    private _httpRequestMaker: HttpRequestMaker;
-    private _userSession: UserSession;
     private _chat: IChat;
+    private _user: IUser;
 
     private _searchInProgress: boolean;
 
-    constructor(chat: IChat, httpRequestMaker: HttpRequestMaker, searchButtonPanel: SearchButtonPanel, searchUserPanel: SearchUserPanel) {
+    constructor(chat: IChat, user: IUser, searchButtonPanel: SearchButtonPanel, searchUserPanel: SearchUserPanel) {
         this._chat = chat;
-        this._httpRequestMaker = httpRequestMaker;
+        this._user = user;
         this._searchButtonPanel = searchButtonPanel;
         this._searchUserPanel = searchUserPanel;    
         this._searchInProgress = false;
@@ -38,13 +35,10 @@ export class UserController implements ISessionController {
         this._setActivePanel(PanelType.NONE);
     }
 
-    bindSession(userSession: UserSession) {
-        this._userSession = userSession;
-    }
-
     activate() {
         this._setActivePanel(PanelType.SEARCH_BUTTON);
 
+        this._user.eventTarget.on(EventConstants.USER_FOUND, this._onUserFound, this);
         this._searchButtonPanel.searchButton.node.on(UiConstants.buttonClickEvent, this._onMoveToSearchPanelClicked, this);
         this._searchUserPanel.closeButton.node.on(UiConstants.buttonClickEvent, this._onCloseSearchPanelClicked, this);
         this._searchUserPanel.searchButton.node.on(UiConstants.buttonClickEvent, this._onSearchUserClicked, this);
@@ -55,11 +49,19 @@ export class UserController implements ISessionController {
     deactivate() {
         this._setActivePanel(PanelType.NONE);
 
+        this._user.eventTarget.off(EventConstants.USER_FOUND, this._onUserFound, this);
         this._searchButtonPanel.searchButton.node.off(UiConstants.buttonClickEvent, this._onMoveToSearchPanelClicked, this);
         this._searchUserPanel.closeButton.node.off(UiConstants.buttonClickEvent, this._onCloseSearchPanelClicked, this);
         this._searchUserPanel.searchButton.node.off(UiConstants.buttonClickEvent, this._onSearchUserClicked, this);
         this._searchUserPanel.searchText.node.off(UiConstants.editingReturn, this._onSearchUserClicked, this);
         this._searchUserPanel.searchResults.startChatEvent.off(EventConstants.CHAT_START, this._onStartChat, this);
+    }
+
+    // ================== MODEL CALLBACKS ==================
+
+    private _onUserFound(users: IUserInfo[]) {
+        this._searchInProgress = false;
+        this._searchUserPanel.setResults(users);
     }
 
     // ================== SEARCH PANEL METHODS ==================
@@ -81,20 +83,7 @@ export class UserController implements ISessionController {
         
         this._searchInProgress = true;
         this._searchUserPanel.searchText.string = "";
-        //TODO: use model
-        let url = ApiConstants.buildRestAddr(this._userSession.baseServerUrl, ApiConstants.FIND_USER_ROUTE) + "/" + searchString;
-        let req = this._httpRequestMaker.createNewRequestWithAuth(url, ApiConstants.HTTP_GET, this._userSession, (error, message) => {
-            this._searchInProgress = false;
-            if (error) {
-                console.log("Error: " + message);
-                return;
-            }
-
-            let resp: IUserInfo[] = JSON.parse(message.toString());
-            this._searchUserPanel.setResults(resp);
-        });
-
-        req.send();
+        this._user.findUser(searchString);
     }
 
     private _onStartChat(userId: number, username: string) {
@@ -106,6 +95,7 @@ export class UserController implements ISessionController {
 
     private _onMoveToSearchPanelClicked() {
         this._setActivePanel(PanelType.SEARCH);
+        this._searchUserPanel.searchText.focus();
     }
 
     // ================== SWITCHING PANELS ==================
