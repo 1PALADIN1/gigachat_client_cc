@@ -8,6 +8,7 @@ import { IUser } from "../../user/User";
 import { IUserInfo } from "../../entity/IUserInfo";
 import { LogOutButtonPanel } from "../panels/user/LogOutButtonPanel";
 import { IWsManager } from "../../network/ws/WsManager";
+import { EventTarget } from "cc";
 
 enum PanelType {
     NONE,
@@ -28,6 +29,8 @@ export class UserController implements IUiController {
     private _wsManager: IWsManager;
 
     private _searchInProgress: boolean;
+
+    eventTarget: EventTarget = new EventTarget();
 
     constructor(chat: IChat, user: IUser, wsManager: IWsManager, searchButtonPanel: SearchButtonPanel, searchUserPanel: SearchUserPanel, logOutButtonPanel: LogOutButtonPanel) {
         this._chat = chat;
@@ -86,6 +89,7 @@ export class UserController implements IUiController {
         let searchString = this._searchUserPanel.searchText.string.trim();
         if (searchString.length < minSearchSymbols) {
             console.error("Requires min " + minSearchSymbols + " symbols to perform searching!");
+            this.eventTarget.emit(EventConstants.USER_ERROR, "Requires min " + minSearchSymbols + " symbols to perform searching!");
             return;
         }
         
