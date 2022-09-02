@@ -17,6 +17,7 @@ import { ChatMessagePanel } from './ui/panels/chat/ChatMessagePanel';
 import { Chat, IChat } from './chat/Chat';
 import { EventConstants } from './EventConstants';
 import { IUser, User } from './user/User';
+import { LogOutButtonPanel } from './ui/panels/user/LogOutButtonPanel';
 const { ccclass, property } = _decorator;
 
 const panelsGroup: string = "Panels";
@@ -59,6 +60,13 @@ export class Main extends Component {
         type: SearchUserPanel
     })
     searchUserPanel: SearchUserPanel = null;
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: LogOutButtonPanel
+    })
+    logOutButtonPanel: LogOutButtonPanel = null;
 
     //chat
     @property({
@@ -126,7 +134,7 @@ export class Main extends Component {
         this._user = new User(this._httpRequestMaker);
 
         this._authController = new AuthController(this._auth, this.authPanel, this.registerPanel, this.infoPanel, this.serverUrl);
-        this._userController = new UserController(this._chat, this._user, this.searchButtonPanel, this.searchUserPanel);
+        this._userController = new UserController(this._chat, this._user, this._wsManager, this.searchButtonPanel, this.searchUserPanel, this.logOutButtonPanel);
         this._chatController = new ChatController(this._chat, this._wsManager, this.chatPanel);
         this._chatMessageController = new ChatMessageController(this._chat, this._wsManager, this.chatMessagePanel, this.noChatSelectedPanel);
     }

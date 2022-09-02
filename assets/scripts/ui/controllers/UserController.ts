@@ -6,6 +6,8 @@ import { IChat } from "../../chat/Chat";
 import { IUiController } from "./IUiController";
 import { IUser } from "../../user/User";
 import { IUserInfo } from "../../entity/IUserInfo";
+import { LogOutButtonPanel } from "../panels/user/LogOutButtonPanel";
+import { IWsManager } from "../../network/ws/WsManager";
 
 enum PanelType {
     NONE,
@@ -19,17 +21,21 @@ export class UserController implements IUiController {
     //panels
     private _searchButtonPanel: SearchButtonPanel;
     private _searchUserPanel: SearchUserPanel;
+    private _logOutButtonPanel: LogOutButtonPanel;
     //models
     private _chat: IChat;
     private _user: IUser;
+    private _wsManager: IWsManager;
 
     private _searchInProgress: boolean;
 
-    constructor(chat: IChat, user: IUser, searchButtonPanel: SearchButtonPanel, searchUserPanel: SearchUserPanel) {
+    constructor(chat: IChat, user: IUser, wsManager: IWsManager, searchButtonPanel: SearchButtonPanel, searchUserPanel: SearchUserPanel, logOutButtonPanel: LogOutButtonPanel) {
         this._chat = chat;
         this._user = user;
+        this._wsManager = wsManager;
         this._searchButtonPanel = searchButtonPanel;
-        this._searchUserPanel = searchUserPanel;    
+        this._searchUserPanel = searchUserPanel;
+        this._logOutButtonPanel = logOutButtonPanel;
         this._searchInProgress = false;
         
         this._setActivePanel(PanelType.NONE);
@@ -44,6 +50,7 @@ export class UserController implements IUiController {
         this._searchUserPanel.searchButton.node.on(UiConstants.buttonClickEvent, this._onSearchUserClicked, this);
         this._searchUserPanel.searchText.node.on(UiConstants.editingReturn, this._onSearchUserClicked, this);
         this._searchUserPanel.searchResults.startChatEvent.on(EventConstants.CHAT_START, this._onStartChat, this);
+        this._logOutButtonPanel.logOutButton.node.on(UiConstants.buttonClickEvent, this._onLogOutButtonClicked, this);
     }
 
     deactivate() {
@@ -55,6 +62,7 @@ export class UserController implements IUiController {
         this._searchUserPanel.searchButton.node.off(UiConstants.buttonClickEvent, this._onSearchUserClicked, this);
         this._searchUserPanel.searchText.node.off(UiConstants.editingReturn, this._onSearchUserClicked, this);
         this._searchUserPanel.searchResults.startChatEvent.off(EventConstants.CHAT_START, this._onStartChat, this);
+        this._logOutButtonPanel.logOutButton.node.off(UiConstants.buttonClickEvent, this._onLogOutButtonClicked, this);
     }
 
     // ================== MODEL CALLBACKS ==================
@@ -98,6 +106,12 @@ export class UserController implements IUiController {
         this._searchUserPanel.searchText.focus();
     }
 
+    // ================== LOG OUT BUTTON METHODS ==================
+
+    private _onLogOutButtonClicked() {
+        this._wsManager.dispose();
+    }
+
     // ================== SWITCHING PANELS ==================
 
     private _setActivePanel(panelType: PanelType) {
@@ -105,10 +119,12 @@ export class UserController implements IUiController {
             case PanelType.NONE: {
                 this._searchButtonPanel.node.active = false;
                 this._searchUserPanel.node.active = false;
+                this._logOutButtonPanel.node.active = false;
                 break;
             }
             case PanelType.SEARCH_BUTTON: {
                 this._searchButtonPanel.node.active = true;
+                this._logOutButtonPanel.node.active = true;
                 this._searchUserPanel.node.active = false;
                 break;
             }
