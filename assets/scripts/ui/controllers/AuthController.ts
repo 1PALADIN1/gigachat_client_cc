@@ -6,16 +6,13 @@ import { RegisterPanel } from "../panels/auth/RegisterPanel";
 import { IUiController } from "./IUiController";
 import { EventTarget } from 'cc';
 import { UiConstants } from "../UiConstants";
+import { EventConstants } from "../../EventConstants";
 
 enum PanelType {
     NONE,
     AUTH,
     REGISTER,
     INFO
-}
-
-export enum AuthResultEvent {
-    SUCCESS = "success"
 }
 
 const connectingMessage: string = "Connecting...";
@@ -31,7 +28,7 @@ export class AuthController implements IUiController {
 
     private _activePanelType?: PanelType;
 
-    authResultEvent: EventTarget;
+    authResultEvent: EventTarget = new EventTarget();
 
     constructor(auth: IAuth, authPanel: AuthPanel, registerPanel: RegisterPanel, infoPanel: InfoPanel, defaultServerUrl: string) {
         this._auth = auth;
@@ -39,7 +36,6 @@ export class AuthController implements IUiController {
         this._registerPanel = registerPanel;
         this._infoPanel = infoPanel;
         this._defaultServerUrl = defaultServerUrl;
-        this.authResultEvent = new EventTarget();
 
         this._auth.baseUrl = this._defaultServerUrl;
         this._authPanel.setServerUrl(this._defaultServerUrl);
@@ -83,11 +79,13 @@ export class AuthController implements IUiController {
 
         if (username == "") {
             console.error("Username is not set!");
+            this.authResultEvent.emit(EventConstants.AUTH_ERROR, "Username is not set!");
             return;
         }
 
         if (password == "") {
             console.error("Password is not set!");
+            this.authResultEvent.emit(EventConstants.AUTH_ERROR, "Password is not set!");
             return;
         }
 
@@ -104,16 +102,19 @@ export class AuthController implements IUiController {
 
         if (username == "") {
             console.error("Username is not set!");
+            this.authResultEvent.emit(EventConstants.AUTH_ERROR, "Username is not set!");
             return;
         }
 
         if (password == "") {
             console.error("Password is not set!");
+            this.authResultEvent.emit(EventConstants.AUTH_ERROR, "Password is not set!");
             return;
         }
 
         if (password != confirmPassword) {
             console.error("Passwords do not match!");
+            this.authResultEvent.emit(EventConstants.AUTH_ERROR, "Passwords do not match!");
             return;
         }
 
@@ -137,7 +138,7 @@ export class AuthController implements IUiController {
         console.log("Sign in success!");
         this._setActivePanel(PanelType.NONE);
         this._authPanel.clearEditBoxes();
-        this.authResultEvent.emit(AuthResultEvent.SUCCESS, session);
+        this.authResultEvent.emit(EventConstants.AUTH_SUCCESS, session);
     }
 
     private _signUpSuccess(message: string) {
@@ -147,7 +148,8 @@ export class AuthController implements IUiController {
     }
 
     private _authError(message: string) {
-        console.error("Error: " + message);
+        console.error("Auth error: " + message);
+        this.authResultEvent.emit(EventConstants.AUTH_ERROR, "Auth error: " + message);
 
         if (this._activePanelType == null) {
             this._setActivePanel(PanelType.AUTH);

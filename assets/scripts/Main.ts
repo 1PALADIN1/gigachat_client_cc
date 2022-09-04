@@ -1,6 +1,6 @@
 import { _decorator, Component, Node } from 'cc';
 import { IAuth, Auth } from './network/auth/Auth';
-import { AuthController, AuthResultEvent } from './ui/controllers/AuthController';
+import { AuthController } from './ui/controllers/AuthController';
 import { AuthPanel } from './ui/panels/auth/AuthPanel';
 import { InfoPanel } from './ui/panels/InfoPanel';
 import { RegisterPanel } from './ui/panels/auth/RegisterPanel';
@@ -17,6 +17,8 @@ import { ChatMessagePanel } from './ui/panels/chat/ChatMessagePanel';
 import { Chat, IChat } from './chat/Chat';
 import { EventConstants } from './EventConstants';
 import { IUser, User } from './user/User';
+import { LogOutButtonPanel } from './ui/panels/user/LogOutButtonPanel';
+import { ErrorPanel } from './ui/panels/ErrorPanel';
 const { ccclass, property } = _decorator;
 
 const panelsGroup: string = "Panels";
@@ -59,6 +61,13 @@ export class Main extends Component {
         type: SearchUserPanel
     })
     searchUserPanel: SearchUserPanel = null;
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: LogOutButtonPanel
+    })
+    logOutButtonPanel: LogOutButtonPanel = null;
 
     //chat
     @property({
@@ -91,6 +100,13 @@ export class Main extends Component {
         type: InfoPanel
     })
     infoPanel: InfoPanel = null;
+    @property({
+        group: {
+            name: panelsGroup
+        },
+        type: ErrorPanel
+    })
+    errorPanel: ErrorPanel = null;
 
     //models
     private _auth: IAuth;
@@ -126,23 +142,26 @@ export class Main extends Component {
         this._user = new User(this._httpRequestMaker);
 
         this._authController = new AuthController(this._auth, this.authPanel, this.registerPanel, this.infoPanel, this.serverUrl);
-        this._userController = new UserController(this._chat, this._user, this.searchButtonPanel, this.searchUserPanel);
+        this._userController = new UserController(this._chat, this._user, this._wsManager, this.searchButtonPanel, this.searchUserPanel, this.logOutButtonPanel);
         this._chatController = new ChatController(this._chat, this._wsManager, this.chatPanel);
         this._chatMessageController = new ChatMessageController(this._chat, this._wsManager, this.chatMessagePanel, this.noChatSelectedPanel);
     }
 
     private _startAuth() {
-        this._authController.authResultEvent.on(AuthResultEvent.SUCCESS, this._onAuthSuccess, this);
+        this._authController.authResultEvent.on(EventConstants.AUTH_SUCCESS, this._onAuthSuccess, this);
+        this._authController.authResultEvent.on(EventConstants.AUTH_ERROR, this._displayError, this);
         this._authController.activate();
     }
 
     private _onAuthSuccess(userSession: UserSession) {
-        this._authController.authResultEvent.off(AuthResultEvent.SUCCESS, this._onAuthSuccess, this);
+        this._authController.authResultEvent.off(EventConstants.AUTH_SUCCESS, this._onAuthSuccess, this);
+        this._authController.authResultEvent.off(EventConstants.AUTH_ERROR, this._displayError, this);
         this._authController.deactivate();
 
         this._wsManager.connect(userSession, (result, message) => {
             if (!result) {
                 console.error(message);
+                this._displayError(message);
                 this._startAuth();
                 return;
             }
@@ -153,6 +172,7 @@ export class Main extends Component {
             //listen connection events
             this._wsManager.eventTarget.on(EventConstants.WS_ERROR, this._disconnected, this);
             this._wsManager.eventTarget.on(EventConstants.WS_CLOSED, this._disconnected, this);
+            this._userController.eventTarget.on(EventConstants.USER_ERROR, this._displayError, this);
 
             //activate controllers
             this._chatController.activate();
@@ -162,11 +182,16 @@ export class Main extends Component {
         });
     }
 
+    private _displayError(message: string) {
+        this.errorPanel.display(message);
+    }
+
     private _disconnected(message: string) {
         console.log("Connection closed: " + message);
 
         this._wsManager.eventTarget.off(EventConstants.WS_ERROR, this._disconnected, this);
         this._wsManager.eventTarget.off(EventConstants.WS_CLOSED, this._disconnected, this);
+        this._userController.eventTarget.off(EventConstants.USER_ERROR, this._displayError, this);
 
         //deactivate controllers
         this._chatController.deactivate();
